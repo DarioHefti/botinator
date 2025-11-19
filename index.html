@@ -293,10 +293,15 @@
             word-wrap: break-word;
         }
         
-        .copy-btn {
+        .code-actions {
             position: absolute;
             top: 8px;
             right: 8px;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .code-action-btn {
             background: rgba(255,255,255,0.1);
             border: none;
             color: #94a3b8;
@@ -306,7 +311,7 @@
             cursor: pointer;
             transition: var(--transition);
         }
-        .copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+        .code-action-btn:hover { background: rgba(255,255,255,0.2); color: white; }
 
         /* Input Area */
         .input-area {
@@ -611,7 +616,8 @@
         activeChatId: null,
         llms: [],       // { id, label, apiUrl, apiKey }
         isStreaming: false,
-        abortController: null
+        abortController: null,
+        autoScrollEnabled: true
     };
 
     // --- Initialization ---
@@ -623,6 +629,7 @@
         
         // Event Listeners
         els.chatForm.addEventListener('submit', handleSend);
+        els.chatHistory.addEventListener('scroll', handleScroll);
         els.chatInput.addEventListener('input', autoResizeInput);
         els.chatInput.addEventListener('keydown', handleEnter);
         els.newChatBtn.addEventListener('click', createNewChat);
@@ -878,7 +885,7 @@
             els.chatHistory.appendChild(msgDiv);
         });
         
-        scrollToBottom();
+        scrollToBottom(true);
     }
 
     function updateLastMessage(content) {
@@ -894,23 +901,99 @@
     function enhanceCodeBlocks(container) {
         if (!container) return;
         container.querySelectorAll('pre').forEach(pre => {
-            if (pre.querySelector('.copy-btn')) return;
-            const btn = document.createElement('button');
-            btn.className = 'copy-btn';
-            btn.textContent = 'Copy';
-            btn.onclick = () => {
+            if (pre.querySelector('.code-actions')) return;
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'code-actions';
+            
+            // Copy Button
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'code-action-btn';
+            copyBtn.textContent = 'Copy';
+            copyBtn.title = 'Copy to clipboard';
+            copyBtn.onclick = () => {
                 const code = pre.querySelector('code')?.innerText || '';
                 navigator.clipboard.writeText(code).then(() => {
-                    btn.textContent = 'Copied!';
-                    setTimeout(() => btn.textContent = 'Copy', 2000);
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => copyBtn.textContent = 'Copy', 2000);
                 });
             };
-            pre.appendChild(btn);
+            
+            // Save Button
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'code-action-btn';
+            saveBtn.textContent = 'Save';
+            saveBtn.title = 'Save to file';
+            saveBtn.onclick = () => {
+                const codeElement = pre.querySelector('code');
+                const code = codeElement?.innerText || '';
+                if (!code) return;
+                
+                // Try to detect extension from class
+                let extension = 'txt';
+                if (codeElement && codeElement.className) {
+                    const match = codeElement.className.match(/language-(\w+)/);
+                    if (match && match[1]) {
+                        extension = match[1];
+                        // Common aliases
+                        const map = {
+                            'python': 'py',
+                            'javascript': 'js',
+                            'typescript': 'ts',
+                            'csharp': 'cs',
+                            'cpp': 'cpp',
+                            'c': 'c',
+                            'java': 'java',
+                            'kotlin': 'kt',
+                            'ruby': 'rb',
+                            'go': 'go',
+                            'rust': 'rs',
+                            'php': 'php',
+                            'swift': 'swift',
+                            'shell': 'sh',
+                            'bash': 'sh',
+                            'powershell': 'ps1',
+                            'yaml': 'yaml',
+                            'json': 'json',
+                            'xml': 'xml',
+                            'html': 'html',
+                            'css': 'css',
+                            'sql': 'sql'
+                        };
+                        if (map[extension]) extension = map[extension];
+                    }
+                }
+                
+                const blob = new Blob([code], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `snippet.${extension}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                saveBtn.textContent = 'Saved!';
+                setTimeout(() => saveBtn.textContent = 'Save', 2000);
+            };
+
+            wrapper.appendChild(copyBtn);
+            wrapper.appendChild(saveBtn);
+            pre.appendChild(wrapper);
         });
     }
 
-    function scrollToBottom() {
-        els.chatHistory.scrollTop = els.chatHistory.scrollHeight;
+    function handleScroll() {
+        const { scrollTop, scrollHeight, clientHeight } = els.chatHistory;
+        const isAtBottom = scrollHeight - scrollTop <= clientHeight + 50;
+        state.autoScrollEnabled = isAtBottom;
+    }
+
+    function scrollToBottom(force = false) {
+        if (force || state.autoScrollEnabled) {
+            els.chatHistory.scrollTop = els.chatHistory.scrollHeight;
+        }
     }
 
     function updateSendBtnState() {
