@@ -1174,11 +1174,11 @@
     }
 
     // --- Markdown to HTML (safe-ish): supports headings, lists, hr, blockquotes, links, code
-    function renderMarkdownToHtml(md) {
+    function simpleMarkdownRender(md) {
         if (!md) return '';
         // Extract code fences first to protect contents
         const codeBlocks = [];
-        md = md.replace(/```(\w+)?\r?\n([\s\S]*?)```/g, (m, lang, code) => {
+        md = md.replace(/```([a-zA-Z0-9_+\-]+)?\s*\r?\n([\s\S]*?)```/g, (m, lang, code) => {
             const idx = codeBlocks.length;
             codeBlocks.push({ lang: (lang||'').toLowerCase(), code });
             return `@@CODE_BLOCK_${idx}@@`;
@@ -1292,27 +1292,34 @@
     function renderMarkdownToHtml(md) {
         if (!md) return '';
         try {
-            if (typeof marked !== 'undefined' && typeof hljs !== 'undefined') {
+            // Require both marked and DOMPurify for the full experience.
+            // If DOMPurify is missing, we shouldn't use marked because it might return unsafe HTML.
+            if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
                 marked.setOptions({
                     gfm: true,
                     breaks: true,
                     headerIds: false,
                     mangle: false,
                     highlight: function(code, lang) {
-                        try {
-                            if (lang && hljs.getLanguage(lang)) {
-                                return hljs.highlight(code, { language: lang }).value;
-                            }
-                        } catch {}
-                        try { return hljs.highlightAuto(code).value; } catch { return code; }
+                        if (typeof hljs !== 'undefined') {
+                            try {
+                                if (lang && hljs.getLanguage(lang)) {
+                                    return hljs.highlight(code, { language: lang }).value;
+                                }
+                                return hljs.highlightAuto(code).value;
+                            } catch {}
+                        }
+                        return code;
                     }
                 });
+                const raw = marked.parse(md);
+                return DOMPurify.sanitize(raw);
             }
-            const raw = (typeof marked !== 'undefined') ? marked.parse(md) : md;
-            return (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(raw) : raw;
-        } catch {
-            return escapeHtml(md).replace(/\n/g, '<br>');
+        } catch (e) {
+            console.error('Markdown render error, falling back:', e);
         }
+        // Fallback: use simple renderer (safe)
+        return simpleMarkdownRender(md);
     }
 
     // --- Send to OpenAI (streaming)
