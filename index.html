@@ -625,11 +625,6 @@
         </div>
         <div class="modal-body">
             <div class="form-group">
-                <label class="form-label">System Instruction (Persona)</label>
-                <textarea class="form-input" id="systemPrompt" rows="3" placeholder="You are a helpful assistant..."></textarea>
-            </div>
-
-            <div class="form-group">
                 <label class="form-label" style="font-weight:600; color:var(--text-main);">Manage LLMs</label>
             </div>
             
@@ -639,6 +634,10 @@
                 <div class="form-group">
                     <label class="form-label">Label</label>
                     <input type="text" class="form-input" id="newLlmLabel" placeholder="e.g. GPT-4">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">System Prompt</label>
+                    <textarea class="form-input" id="newLlmSystemPrompt" rows="3" placeholder="You are a helpful assistant..."></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">API URL</label>
@@ -682,7 +681,7 @@
         newLlmUrl: document.getElementById('newLlmUrl'),
         newLlmKey: document.getElementById('newLlmKey'),
         newLlmModelId: document.getElementById('newLlmModelId'),
-        systemPrompt: document.getElementById('systemPrompt'),
+        newLlmSystemPrompt: document.getElementById('newLlmSystemPrompt'),
         micBtn: document.getElementById('micBtn'),
         jumpBtn: document.getElementById('jumpBtn'),
         jumpBottomBtn: document.getElementById('jumpBottomBtn'),
@@ -741,7 +740,6 @@
             }
         });
         
-        els.systemPrompt.addEventListener('change', saveSystemPrompt);
         els.llmSelect.addEventListener('change', saveActiveLlm);
 
         // Initial icon state
@@ -775,9 +773,6 @@
         const savedLlms = localStorage.getItem('chat_llms_v1'); // Use old key for continuity if possible
         if (savedLlms) state.llms = JSON.parse(savedLlms);
         
-        // Load global system prompt
-        els.systemPrompt.value = localStorage.getItem('botinator_system_prompt') || '';
-        
         // Restore active LLM selection
         const activeLlmId = localStorage.getItem('botinator_active_llm');
         if(activeLlmId) setTimeout(() => els.llmSelect.value = activeLlmId, 100);
@@ -789,10 +784,6 @@
 
     function saveLlmState() {
         localStorage.setItem('chat_llms_v1', JSON.stringify(state.llms));
-    }
-
-    function saveSystemPrompt() {
-        localStorage.setItem('botinator_system_prompt', els.systemPrompt.value);
     }
     
     function saveActiveLlm() {
@@ -897,8 +888,8 @@
         updateSendBtnState();
 
         try {
-            const systemMsg = els.systemPrompt.value.trim() 
-                ? [{ role: 'system', content: els.systemPrompt.value.trim() }] 
+            const systemMsg = (llm.systemPrompt || '').trim() 
+                ? [{ role: 'system', content: llm.systemPrompt.trim() }] 
                 : [];
             
             // Filter out pending for API
@@ -1129,6 +1120,7 @@
         const apiUrl = els.newLlmUrl.value.trim();
         const apiKey = els.newLlmKey.value.trim();
         const modelId = els.newLlmModelId.value.trim();
+        const systemPrompt = els.newLlmSystemPrompt.value.trim();
         
         if (!label || !apiUrl || !apiKey) return;
         
@@ -1136,20 +1128,21 @@
             // Update existing
             const index = state.llms.findIndex(l => l.id === state.editingLlmId);
             if (index !== -1) {
-                state.llms[index] = { ...state.llms[index], label, apiUrl, apiKey, modelId };
+                state.llms[index] = { ...state.llms[index], label, apiUrl, apiKey, modelId, systemPrompt };
                 saveLlmState();
             }
             cancelEdit(); // Reset UI
         } else {
             // Add new
             const id = 'llm_' + Date.now();
-            state.llms.push({ id, label, apiUrl, apiKey, modelId });
+            state.llms.push({ id, label, apiUrl, apiKey, modelId, systemPrompt });
             saveLlmState();
             
             els.newLlmLabel.value = '';
             els.newLlmUrl.value = '';
             els.newLlmKey.value = '';
             els.newLlmModelId.value = '';
+            els.newLlmSystemPrompt.value = '';
         }
         
         renderLlmList();
@@ -1165,6 +1158,7 @@
         els.newLlmUrl.value = llm.apiUrl;
         els.newLlmKey.value = llm.apiKey;
         els.newLlmModelId.value = llm.modelId || '';
+        els.newLlmSystemPrompt.value = llm.systemPrompt || '';
         
         els.addLlmBtn.textContent = 'Update LLM';
         els.cancelLlmBtn.style.display = 'block';
@@ -1176,6 +1170,7 @@
         els.newLlmUrl.value = '';
         els.newLlmKey.value = '';
         els.newLlmModelId.value = '';
+        els.newLlmSystemPrompt.value = '';
         
         els.addLlmBtn.textContent = 'Add LLM';
         els.cancelLlmBtn.style.display = 'none';
