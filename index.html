@@ -194,6 +194,7 @@
             justify-content: space-between;
             padding: 0 20px;
             border-bottom: 1px solid rgba(255,255,255,0.03);
+            flex-shrink: 0;
         }
 
         .mobile-menu-btn {
@@ -244,6 +245,22 @@
             padding: 12px;
         }
 
+        /* Workspace & Chat Column */
+        .workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .chat-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0; /* Prevents flex item from overflowing */
+        }
+
         .chat-history {
             flex: 1;
             overflow-y: auto;
@@ -255,6 +272,48 @@
             max-width: 100%;
             margin: 0 auto;
             width: 100%;
+        }
+
+        /* Artifact Panel */
+        .artifact-panel {
+            width: 0;
+            background: var(--bg-sidebar);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .artifact-panel.open {
+            width: 50%;
+            border-left: 1px solid var(--border-color);
+        }
+        
+        .artifact-header {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-sidebar);
+            height: 50px;
+        }
+        
+        .artifact-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+        
+        .artifact-content {
+            flex: 1;
+            background: white;
+            position: relative;
+        }
+        
+        .artifact-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
         }
 
         /* Messages */
@@ -535,7 +594,13 @@
                 width: 280px !important;
             }
             .sidebar.open { transform: translateX(100%); }
-            /* .mobile-menu-btn { display: block; } - removed since it is now flex always */
+            
+            .artifact-panel.open {
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                width: 100%;
+                z-index: 50;
+            }
         }
 
         /* Scrollbar */
@@ -585,34 +650,52 @@
         </select>
     </div>
 
-    <div class="chat-history" id="chatHistory">
-        <!-- Messages injected here -->
-        <div style="text-align:center; margin-top:40px; color:var(--text-muted);">
-            <h3>Welcome to Botinator</h3>
-            <p>Configure an LLM in settings to get started.</p>
-        </div>
-    </div>
-
-    <button class="jump-to-response-btn" id="jumpBtn" title="Jump to latest response">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
-    </button>
-    
-    <button class="jump-to-bottom-btn" id="jumpBottomBtn" title="Jump to bottom">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"></path></svg>
-    </button>
-
-    <div class="input-area">
-        <form class="input-container" id="chatForm">
-            <textarea class="chat-textarea" id="chatInput" placeholder="Message Botinator..." rows="1"></textarea>
-            <div class="input-actions">
-                <button type="button" class="action-btn" id="micBtn" title="Voice Input">
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                </button>
-                <button type="submit" class="action-btn send-btn" id="sendBtn" disabled>
-                    <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
+    <div class="workspace">
+        <div class="chat-column">
+            <div class="chat-history" id="chatHistory">
+                <!-- Messages injected here -->
+                <div style="text-align:center; margin-top:40px; color:var(--text-muted);">
+                    <h3>Welcome to Botinator</h3>
+                    <p>Configure an LLM in settings to get started.</p>
+                </div>
             </div>
-        </form>
+
+            <button class="jump-to-response-btn" id="jumpBtn" title="Jump to latest response">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+            </button>
+            
+            <button class="jump-to-bottom-btn" id="jumpBottomBtn" title="Jump to bottom">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"></path></svg>
+            </button>
+
+            <div class="input-area">
+                <form class="input-container" id="chatForm">
+                    <textarea class="chat-textarea" id="chatInput" placeholder="Message Botinator..." rows="1"></textarea>
+                    <div class="input-actions">
+                        <button type="button" class="action-btn" id="micBtn" title="Voice Input">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        </button>
+                        <button type="submit" class="action-btn send-btn" id="sendBtn" disabled>
+                            <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Artifact Panel -->
+        <div class="artifact-panel" id="artifactPanel">
+            <div class="artifact-header">
+                <span class="artifact-title">Preview</span>
+                <div style="display:flex; gap:8px;">
+                    <button class="code-action-btn" id="downloadArtifactBtn">Download</button>
+                    <button class="code-action-btn" id="closeArtifactBtn">Close</button>
+                </div>
+            </div>
+            <div class="artifact-content">
+                <iframe class="artifact-iframe" id="artifactFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -688,7 +771,12 @@
         mobileMenuBtn: document.getElementById('mobileMenuBtn'),
         sidebar: document.getElementById('sidebar'),
         sidebarHeader: document.getElementById('sidebarHeader'),
-        currentChatTitle: document.getElementById('currentChatTitle')
+        currentChatTitle: document.getElementById('currentChatTitle'),
+        // Artifact Elements
+        artifactPanel: document.getElementById('artifactPanel'),
+        artifactFrame: document.getElementById('artifactFrame'),
+        closeArtifactBtn: document.getElementById('closeArtifactBtn'),
+        downloadArtifactBtn: document.getElementById('downloadArtifactBtn')
     };
 
     let state = {
@@ -698,7 +786,8 @@
         editingLlmId: null,
         isStreaming: false,
         abortController: null,
-        autoScrollEnabled: true
+        autoScrollEnabled: true,
+        currentArtifact: { code: null, type: null }
     };
 
     // --- Initialization ---
@@ -722,6 +811,10 @@
         els.micBtn.addEventListener('click', toggleSpeech);
         els.jumpBtn.addEventListener('click', scrollToLatestResponse);
         els.jumpBottomBtn.addEventListener('click', () => scrollToBottom(true));
+        
+        // Artifact Listeners
+        els.closeArtifactBtn.addEventListener('click', closeArtifact);
+        els.downloadArtifactBtn.addEventListener('click', downloadCurrentArtifact);
         
         els.mobileMenuBtn.addEventListener('click', () => {
             if (window.innerWidth <= 768) {
@@ -799,6 +892,7 @@
         renderChats();
         setActiveChat(id);
         if(window.innerWidth <= 768) els.sidebar.classList.remove('open');
+        closeArtifact();
     }
 
     function deleteChat(e, id) {
@@ -1015,60 +1109,78 @@
                 const codeElement = pre.querySelector('code');
                 const code = codeElement?.innerText || '';
                 if (!code) return;
-                
-                // Try to detect extension from class
-                let extension = 'txt';
-                if (codeElement && codeElement.className) {
-                    const match = codeElement.className.match(/language-(\w+)/);
-                    if (match && match[1]) {
-                        extension = match[1];
-                        // Common aliases
-                        const map = {
-                            'python': 'py',
-                            'javascript': 'js',
-                            'typescript': 'ts',
-                            'csharp': 'cs',
-                            'cpp': 'cpp',
-                            'c': 'c',
-                            'java': 'java',
-                            'kotlin': 'kt',
-                            'ruby': 'rb',
-                            'go': 'go',
-                            'rust': 'rs',
-                            'php': 'php',
-                            'swift': 'swift',
-                            'shell': 'sh',
-                            'bash': 'sh',
-                            'powershell': 'ps1',
-                            'yaml': 'yaml',
-                            'json': 'json',
-                            'xml': 'xml',
-                            'html': 'html',
-                            'css': 'css',
-                            'sql': 'sql'
-                        };
-                        if (map[extension]) extension = map[extension];
-                    }
-                }
-                
-                const blob = new Blob([code], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `snippet.${extension}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
+                downloadString(code, getExtension(codeElement));
                 saveBtn.textContent = 'Saved!';
                 setTimeout(() => saveBtn.textContent = 'Save', 2000);
             };
 
             wrapper.appendChild(copyBtn);
             wrapper.appendChild(saveBtn);
+
+            // Preview Button (New)
+            const codeElement = pre.querySelector('code');
+            const ext = getExtension(codeElement);
+            if (ext === 'html' || ext === 'svg') {
+                const previewBtn = document.createElement('button');
+                previewBtn.className = 'code-action-btn';
+                previewBtn.textContent = 'Preview';
+                previewBtn.title = 'Preview in Side Panel';
+                previewBtn.onclick = () => {
+                    const code = codeElement?.innerText || '';
+                    openArtifact(code, ext);
+                };
+                wrapper.appendChild(previewBtn);
+            }
+
             pre.appendChild(wrapper);
         });
+    }
+    
+    // --- Artifacts Logic ---
+    function openArtifact(code, type) {
+        state.currentArtifact = { code, type };
+        els.artifactPanel.classList.add('open');
+        
+        const blob = new Blob([code], { type: type === 'svg' ? 'image/svg+xml' : 'text/html' });
+        const url = URL.createObjectURL(blob);
+        els.artifactFrame.src = url;
+    }
+    
+    function closeArtifact() {
+        els.artifactPanel.classList.remove('open');
+        setTimeout(() => {
+            els.artifactFrame.src = 'about:blank'; // clear
+        }, 300);
+    }
+    
+    function downloadCurrentArtifact() {
+        if (state.currentArtifact.code) {
+            downloadString(state.currentArtifact.code, state.currentArtifact.type || 'html');
+        }
+    }
+
+    function getExtension(codeElement) {
+        if (codeElement && codeElement.className) {
+            const match = codeElement.className.match(/language-(\w+)/);
+            if (match && match[1]) {
+                const ext = match[1];
+                const map = { 'xml': 'html', 'xhtml': 'html' }; // simple mapping
+                return map[ext] || ext;
+            }
+        }
+        return 'txt';
+    }
+    
+    function downloadString(content, extension) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `artifact.${extension}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     function handleScroll() {
@@ -1246,7 +1358,7 @@
 
     function escapeHtml(text) {
         if (!text) return '';
-        return text.replace(/[&<>"']/g, function(m) {
+        return text.replace(/[&<"']/g, function(m) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
         });
     }
