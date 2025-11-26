@@ -585,16 +585,24 @@
             border-color: var(--accent-color);
         }
 
-        /* Mobile */
-        @media (max-width: 768px) {
+        /* Responsive Breakpoints */
+        /* Tablet/Small Laptop (Sidebar becomes overlay) */
+        @media (max-width: 1024px) {
             .sidebar {
                 position: fixed;
                 left: -280px;
                 height: 100%;
                 width: 280px !important;
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
             }
             .sidebar.open { transform: translateX(100%); }
             
+            /* When sidebar is fixed, we don't need to push content, it overlays */
+            .main-content { margin-left: 0; }
+        }
+
+        /* Mobile (Artifacts take full screen) */
+        @media (max-width: 768px) {
             .artifact-panel.open {
                 position: fixed;
                 top: 0; left: 0; right: 0; bottom: 0;
@@ -817,7 +825,7 @@
         els.downloadArtifactBtn.addEventListener('click', downloadCurrentArtifact);
         
         els.mobileMenuBtn.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 els.sidebar.classList.toggle('open');
             } else {
                 els.sidebar.classList.toggle('collapsed');
@@ -827,7 +835,7 @@
 
         // Click header to close sidebar on mobile
         els.sidebarHeader.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 1024) {
                 els.sidebar.classList.remove('open');
                 updateMenuButtonIcon();
             }
@@ -916,6 +924,12 @@
         renderMessages(chat.messages);
         renderChats(); // update active class
         els.chatInput.focus();
+        
+        // Auto-close sidebar on mobile/tablet
+        if (window.innerWidth <= 1024) {
+            els.sidebar.classList.remove('open');
+            updateMenuButtonIcon();
+        }
     }
 
     function autoResizeInput() {
@@ -1331,7 +1345,7 @@
 
     // --- Utilities ---
     function updateMenuButtonIcon() {
-        const isDesktop = window.innerWidth > 768;
+        const isDesktop = window.innerWidth > 1024;
         const isCollapsed = els.sidebar.classList.contains('collapsed');
         
         // Icon: Hamburger (standard) or Arrow Left (when sidebar is open on desktop)
