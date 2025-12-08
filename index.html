@@ -1779,9 +1779,45 @@
             async function handleSend(e) {
                 e.preventDefault();
                 if (state.isStreaming) {
-                    // Handle cancel
+                    // Handle cancel - abort the request
                     if (state.abortController) state.abortController.abort();
                     state.isStreaming = false;
+                    
+                    // Remove pending/incomplete AI message and restore user's last message to input
+                    const chat = state.chats.find(c => c.id === state.activeChatId);
+                    if (chat && chat.messages.length > 0) {
+                        // Check if last message is an AI message (pending or incomplete)
+                        const lastMsg = chat.messages[chat.messages.length - 1];
+                        if (lastMsg.role === 'assistant') {
+                            chat.messages.pop(); // Remove AI response (complete or incomplete)
+                        }
+                        
+                        // Find and restore the user's last message to input for editing
+                        if (chat.messages.length > 0) {
+                            const lastUserMsg = chat.messages[chat.messages.length - 1];
+                            if (lastUserMsg.role === 'user') {
+                                // Remove the user message so they can edit and resend
+                                chat.messages.pop();
+                                // Restore to input
+                                els.chatInput.value = lastUserMsg.content === '(Image attached)' ? '' : lastUserMsg.content;
+                                // Restore images if any
+                                if (lastUserMsg.images && lastUserMsg.images.length > 0) {
+                                    state.pendingImages = lastUserMsg.images.map(img => ({
+                                        base64: img.base64,
+                                        name: img.name,
+                                        type: img.type
+                                    }));
+                                    renderImagePreviews();
+                                }
+                                autoResizeInput();
+                                updateSendButtonState();
+                            }
+                        }
+                        
+                        renderMessages(chat.messages);
+                        saveState();
+                    }
+                    
                     updateSendBtnState();
                     return;
                 }
@@ -2699,8 +2735,10 @@
             function updateSendBtnState() {
                 if (state.isStreaming) {
                     els.sendBtn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>'; // Stop icon
+                    els.sendBtn.disabled = false; // Ensure button is enabled so user can stop
                 } else {
                     els.sendBtn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+                    updateSendButtonState(); // Re-apply normal disabled state based on input
                 }
             }
 
@@ -3165,6 +3203,11 @@
             }
 
             function updateSendButtonState() {
+                // Always enable button during streaming (so user can stop)
+                if (state.isStreaming) {
+                    els.sendBtn.disabled = false;
+                    return;
+                }
                 const hasText = els.chatInput.value.trim() !== '';
                 const hasImages = state.pendingImages.length > 0;
                 els.sendBtn.disabled = !hasText && !hasImages;
