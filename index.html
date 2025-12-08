@@ -119,6 +119,8 @@
             font-weight: 700;
             font-size: 1.1rem;
             letter-spacing: -0.025em;
+            cursor: pointer;
+            user-select: none;
         }
 
         .new-chat-btn {
@@ -1362,7 +1364,7 @@
                     </path>
                 </svg>
             </div>
-            <div class="app-title">Botinator</div>
+            <div class="app-title" id="appTitle">Botinator</div>
         </div>
 
         <button class="new-chat-btn" id="newChatBtn">
@@ -1581,7 +1583,9 @@
                 // Search Elements
                 searchInput: document.getElementById('searchInput'),
                 searchClear: document.getElementById('searchClear'),
-                searchResults: document.getElementById('searchResults')
+                searchResults: document.getElementById('searchResults'),
+                // Easter Egg
+                appTitle: document.getElementById('appTitle')
             };
 
             let state = {
@@ -1689,6 +1693,9 @@
                 // Search listeners
                 els.searchInput.addEventListener('input', debounce(handleSearch, 300));
                 els.searchClear.addEventListener('click', clearSearch);
+
+                // Easter egg: Triple-click to rename the app
+                setupAppTitleEasterEgg();
 
                 // Save draft on page unload
                 window.addEventListener('beforeunload', () => {
@@ -3174,7 +3181,7 @@
 
                 recognition.onend = () => {
                     els.micBtn.style.color = '';
-                    els.chatInput.placeholder = "Message Botinator...";
+                    els.chatInput.placeholder = "Message " + getAppName() + "...";
                     state.recognition = null;
                     // Note: Restart is handled by speakText callback to avoid race conditions
                 };
@@ -3442,6 +3449,106 @@
             function clearSearch() {
                 els.searchInput.value = '';
                 els.searchResults.innerHTML = '';
+            }
+
+            // --- Easter Egg: Rename App ---
+            function getAppName() {
+                return localStorage.getItem('botinator_custom_name') || 'Botinator';
+            }
+
+            function setAppName(name) {
+                const newName = name.trim() || 'Botinator';
+                localStorage.setItem('botinator_custom_name', newName);
+                updateAllAppNameReferences(newName);
+            }
+
+            function updateAllAppNameReferences(name) {
+                // Update sidebar title
+                els.appTitle.textContent = name;
+                // Update page title
+                document.title = name + ' AI';
+                // Update current chat title if it shows default
+                if (els.currentChatTitle.textContent === 'Botinator' || els.currentChatTitle.textContent === getAppName()) {
+                    els.currentChatTitle.textContent = name;
+                }
+                // Update welcome message if visible
+                const welcomeMsg = els.chatHistory.querySelector('h3');
+                if (welcomeMsg && welcomeMsg.textContent.includes('Welcome to')) {
+                    welcomeMsg.textContent = 'Welcome to ' + name;
+                }
+                // Update input placeholder
+                els.chatInput.placeholder = 'Message ' + name + '...';
+            }
+
+            function setupAppTitleEasterEgg() {
+                let clickCount = 0;
+                let clickTimer = null;
+
+                // Load saved name on startup and update all references
+                const savedName = getAppName();
+                updateAllAppNameReferences(savedName);
+
+                els.appTitle.addEventListener('click', (e) => {
+                    clickCount++;
+                    
+                    if (clickTimer) clearTimeout(clickTimer);
+                    
+                    clickTimer = setTimeout(() => {
+                        clickCount = 0;
+                    }, 400);
+
+                    if (clickCount >= 3) {
+                        clickCount = 0;
+                        clearTimeout(clickTimer);
+                        showAppNameInput();
+                    }
+                });
+            }
+
+            function showAppNameInput() {
+                const currentName = getAppName();
+                const originalContent = els.appTitle.innerHTML;
+                
+                // Create input field
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentName;
+                input.style.cssText = `
+                    width: 100%;
+                    background: var(--surface-elevated);
+                    border: 2px solid var(--primary);
+                    border-radius: 6px;
+                    color: var(--text-primary);
+                    font-size: inherit;
+                    font-weight: inherit;
+                    padding: 4px 8px;
+                    outline: none;
+                `;
+                
+                // Replace title with input
+                els.appTitle.innerHTML = '';
+                els.appTitle.appendChild(input);
+                input.focus();
+                input.select();
+
+                // Handle save on Enter or blur
+                const saveAndRestore = () => {
+                    const newName = input.value.trim() || 'Botinator';
+                    setAppName(newName);
+                    input.remove();
+                };
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveAndRestore();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        els.appTitle.textContent = currentName;
+                    }
+                });
+
+                input.addEventListener('blur', saveAndRestore);
             }
 
             // --- Speech to Text ---
