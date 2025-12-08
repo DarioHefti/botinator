@@ -172,6 +172,25 @@
             border-color: rgba(99, 102, 241, 0.2);
         }
 
+        .chat-item.streaming .chat-item-title {
+            color: #22c55e;
+        }
+
+        .streaming-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
         .chat-item-title {
             white-space: nowrap;
             overflow: hidden;
@@ -1570,14 +1589,24 @@
                 activeChatId: null,
                 llms: [],       // { id, label, apiUrl, apiKey }
                 editingLlmId: null,
-                isStreaming: false,
+                streamingChats: {},    // { chatId: true } - tracks which chats are streaming
+                abortControllers: {},  // { chatId: AbortController } - per-chat abort controllers
                 isHandsFree: false,
                 recognition: null,
-                abortController: null,
                 autoScrollEnabled: true,
                 currentArtifact: { code: null, type: null },
                 pendingImages: []  // { base64, type, name }
             };
+
+            // Helper to check if a specific chat is streaming
+            function isChatStreaming(chatId) {
+                return !!state.streamingChats[chatId];
+            }
+
+            // Helper to check if current active chat is streaming
+            function isCurrentChatStreaming() {
+                return isChatStreaming(state.activeChatId);
+            }
 
             // --- Initialization ---
             function init() {
@@ -1797,6 +1826,9 @@
                 els.chatInput.value = loadDraft(id);
                 autoResizeInput();
 
+                // Update send button state (show stop if this chat is streaming)
+                updateSendBtnState();
+
                 els.chatInput.focus();
 
                 // Auto-close sidebar on mobile/tablet
@@ -1821,13 +1853,19 @@
 
             async function handleSend(e) {
                 e.preventDefault();
-                if (state.isStreaming) {
-                    // Handle cancel - abort the request
-                    if (state.abortController) state.abortController.abort();
-                    state.isStreaming = false;
+                
+                // Check if CURRENT chat is streaming - handle cancel for this chat only
+                const currentChatId = state.activeChatId;
+                if (isChatStreaming(currentChatId)) {
+                    // Handle cancel - abort the request for THIS chat
+                    if (state.abortControllers[currentChatId]) {
+                        state.abortControllers[currentChatId].abort();
+                    }
+                    delete state.streamingChats[currentChatId];
+                    delete state.abortControllers[currentChatId];
                     
                     // Remove pending/incomplete AI message and restore user's last message to input
-                    const chat = state.chats.find(c => c.id === state.activeChatId);
+                    const chat = state.chats.find(c => c.id === currentChatId);
                     if (chat && chat.messages.length > 0) {
                         // Check if last message is an AI message (pending or incomplete)
                         const lastMsg = chat.messages[chat.messages.length - 1];
@@ -1862,6 +1900,7 @@
                     }
                     
                     updateSendBtnState();
+                    renderChats(); // Update chat list to remove streaming indicator
                     return;
                 }
 
@@ -1880,15 +1919,18 @@
                 // Capture images before clearing
                 const images = [...state.pendingImages];
 
+                // Capture the chat ID for this stream (important for parallel streams)
+                const streamChatId = state.activeChatId;
+
                 // UI Reset
                 els.chatInput.value = '';
                 els.chatInput.style.height = 'auto';
                 clearPendingImages();
-                clearDraft(state.activeChatId); // Clear saved draft after sending
+                clearDraft(streamChatId); // Clear saved draft after sending
                 updateSendButtonState();
 
                 // Add User Message (with images if any)
-                const chat = state.chats.find(c => c.id === state.activeChatId);
+                const chat = state.chats.find(c => c.id === streamChatId);
                 const userMessage = { role: 'user', content: text || '(Image attached)' };
                 if (images.length > 0) {
                     userMessage.images = images.map(img => ({
@@ -1902,22 +1944,29 @@
                 // Auto-title
                 if (chat.messages.length === 1) {
                     chat.title = text.slice(0, 30) + (text.length > 30 ? '...' : '');
-                    els.currentChatTitle.textContent = chat.title;
+                    if (state.activeChatId === streamChatId) {
+                        els.currentChatTitle.textContent = chat.title;
+                    }
                     renderChats();
                 }
 
-                renderMessages(chat.messages);
+                if (state.activeChatId === streamChatId) {
+                    renderMessages(chat.messages);
+                }
 
                 // Prepare AI Placeholder
                 const aiMsg = { role: 'assistant', content: '', pending: true };
                 chat.messages.push(aiMsg);
-                renderMessages(chat.messages); // renders loading
+                if (state.activeChatId === streamChatId) {
+                    renderMessages(chat.messages); // renders loading
+                }
                 saveState();
 
-                // API Call
-                state.isStreaming = true;
-                state.abortController = new AbortController();
+                // API Call - per-chat streaming state
+                state.streamingChats[streamChatId] = true;
+                state.abortControllers[streamChatId] = new AbortController();
                 updateSendBtnState();
+                renderChats(); // Update chat list to show streaming indicator
 
                 try {
                     const systemMsg = (llm.systemPrompt || '').trim()
@@ -1952,23 +2001,30 @@
 
                     await fetchStream(llm, messages, (chunk) => {
                         aiMsg.content += chunk;
-                        updateLastMessage(aiMsg.content); // Real-time update
-                    }, state.abortController.signal);
+                        // Only update UI if we're still viewing this chat
+                        if (state.activeChatId === streamChatId) {
+                            updateLastMessage(aiMsg.content);
+                        }
+                    }, state.abortControllers[streamChatId].signal);
 
                     aiMsg.pending = false;
                     saveState();
                 } catch (err) {
                     if (err.name !== 'AbortError') {
                         aiMsg.content += '\n\n*[Error: ' + err.message + ']*';
-                        updateLastMessage(aiMsg.content);
+                        if (state.activeChatId === streamChatId) {
+                            updateLastMessage(aiMsg.content);
+                        }
                     }
                 } finally {
-                    state.isStreaming = false;
+                    delete state.streamingChats[streamChatId];
+                    delete state.abortControllers[streamChatId];
                     updateSendBtnState();
+                    renderChats(); // Update chat list to remove streaming indicator
                     saveState();
 
-                    // Hands-Free: Speak response and resume listening
-                    if (state.isHandsFree && !state.abortController?.signal.aborted) {
+                    // Hands-Free: Speak response and resume listening (only if still on same chat)
+                    if (state.isHandsFree && state.activeChatId === streamChatId && !state.abortControllers[streamChatId]?.signal?.aborted) {
                         speakText(aiMsg.content, () => {
                             // Only resume if still in hands-free mode
                             if (state.isHandsFree) startHandsFreeListening();
@@ -1982,10 +2038,11 @@
                 els.chatList.innerHTML = '';
                 state.chats.forEach(chat => {
                     const div = document.createElement('div');
-                    div.className = `chat-item ${chat.id === state.activeChatId ? 'active' : ''}`;
+                    const isStreaming = isChatStreaming(chat.id);
+                    div.className = `chat-item ${chat.id === state.activeChatId ? 'active' : ''} ${isStreaming ? 'streaming' : ''}`;
                     div.onclick = () => setActiveChat(chat.id);
                     div.innerHTML = `
-                <div class="chat-item-title">${escapeHtml(chat.title)}</div>
+                <div class="chat-item-title">${isStreaming ? '<span class="streaming-dot"></span>' : ''}${escapeHtml(chat.title)}</div>
                 <div class="chat-item-delete" onclick="event.stopPropagation(); document.dispatchEvent(new CustomEvent('delete-chat', {detail: '${chat.id}'}))">×</div>
             `;
                     div.querySelector('.chat-item-delete').onclick = (e) => deleteChat(e, chat.id);
@@ -2624,9 +2681,10 @@
             }
 
             async function regenerateResponse(messageIndex) {
-                if (state.isStreaming) return;
+                const streamChatId = state.activeChatId;
+                if (isChatStreaming(streamChatId)) return;
 
-                const chat = state.chats.find(c => c.id === state.activeChatId);
+                const chat = state.chats.find(c => c.id === streamChatId);
                 if (!chat || messageIndex < 0) return;
 
                 const llmId = els.llmSelect.value;
@@ -2654,27 +2712,36 @@
                     : [];
                 const messages = [...systemMsg, ...historyPayload];
 
-                state.isStreaming = true;
-                state.abortController = new AbortController();
+                state.streamingChats[streamChatId] = true;
+                state.abortControllers[streamChatId] = new AbortController();
                 updateSendBtnState();
+                renderChats();
 
                 try {
                     await fetchStream(llm, messages, (chunk) => {
                         aiMsg.content += chunk;
-                        updateLastMessageAt(messageIndex, aiMsg.content);
-                    }, state.abortController.signal);
+                        if (state.activeChatId === streamChatId) {
+                            updateLastMessageAt(messageIndex, aiMsg.content);
+                        }
+                    }, state.abortControllers[streamChatId].signal);
 
                     aiMsg.pending = false;
                     saveState();
-                    renderMessages(chat.messages); // Re-render to show action buttons
+                    if (state.activeChatId === streamChatId) {
+                        renderMessages(chat.messages); // Re-render to show action buttons
+                    }
                 } catch (err) {
                     if (err.name !== 'AbortError') {
                         aiMsg.content += '\n\n*[Error: ' + err.message + ']*';
-                        updateLastMessageAt(messageIndex, aiMsg.content);
+                        if (state.activeChatId === streamChatId) {
+                            updateLastMessageAt(messageIndex, aiMsg.content);
+                        }
                     }
                 } finally {
-                    state.isStreaming = false;
+                    delete state.streamingChats[streamChatId];
+                    delete state.abortControllers[streamChatId];
                     updateSendBtnState();
+                    renderChats();
                     saveState();
                 }
             }
@@ -2777,7 +2844,7 @@
             }
 
             function updateSendBtnState() {
-                if (state.isStreaming) {
+                if (isCurrentChatStreaming()) {
                     els.sendBtn.innerHTML = '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>'; // Stop icon
                     els.sendBtn.disabled = false; // Ensure button is enabled so user can stop
                 } else {
@@ -3248,7 +3315,7 @@
 
             function updateSendButtonState() {
                 // Always enable button during streaming (so user can stop)
-                if (state.isStreaming) {
+                if (isCurrentChatStreaming()) {
                     els.sendBtn.disabled = false;
                     return;
                 }
