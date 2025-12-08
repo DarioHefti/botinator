@@ -1615,6 +1615,7 @@
                 els.chatForm.addEventListener('submit', handleSend);
                 els.chatHistory.addEventListener('scroll', handleScroll);
                 els.chatInput.addEventListener('input', autoResizeInput);
+                els.chatInput.addEventListener('input', debounce(() => saveDraft(state.activeChatId), 500));
                 els.chatInput.addEventListener('keydown', handleEnter);
                 els.newChatBtn.addEventListener('click', createNewChat);
                 els.settingsBtn.addEventListener('click', () => toggleModal(true));
@@ -1659,6 +1660,11 @@
                 // Search listeners
                 els.searchInput.addEventListener('input', debounce(handleSearch, 300));
                 els.searchClear.addEventListener('click', clearSearch);
+
+                // Save draft on page unload
+                window.addEventListener('beforeunload', () => {
+                    if (state.activeChatId) saveDraft(state.activeChatId);
+                });
 
                 // Initial icon state
                 updateMenuButtonIcon();
@@ -1722,6 +1728,32 @@
                 localStorage.setItem('botinator_active_llm', els.llmSelect.value);
             }
 
+            // --- Draft Management ---
+            function saveDraft(chatId) {
+                if (!chatId) return;
+                const drafts = JSON.parse(localStorage.getItem('botinator_drafts') || '{}');
+                const inputText = els.chatInput.value;
+                if (inputText.trim()) {
+                    drafts[chatId] = inputText;
+                } else {
+                    delete drafts[chatId]; // Remove empty drafts
+                }
+                localStorage.setItem('botinator_drafts', JSON.stringify(drafts));
+            }
+
+            function loadDraft(chatId) {
+                if (!chatId) return '';
+                const drafts = JSON.parse(localStorage.getItem('botinator_drafts') || '{}');
+                return drafts[chatId] || '';
+            }
+
+            function clearDraft(chatId) {
+                if (!chatId) return;
+                const drafts = JSON.parse(localStorage.getItem('botinator_drafts') || '{}');
+                delete drafts[chatId];
+                localStorage.setItem('botinator_drafts', JSON.stringify(drafts));
+            }
+
             // --- Chat Logic ---
             function createNewChat() {
                 const id = 'c_' + Date.now();
@@ -1738,6 +1770,7 @@
                 e.stopPropagation();
                 // if(!confirm('Delete this chat?')) return;
                 state.chats = state.chats.filter(c => c.id !== id);
+                clearDraft(id); // Remove draft for deleted chat
                 saveState();
                 renderChats();
                 if (state.activeChatId === id) {
@@ -1747,6 +1780,11 @@
             }
 
             function setActiveChat(id) {
+                // Save draft of current chat before switching
+                if (state.activeChatId && state.activeChatId !== id) {
+                    saveDraft(state.activeChatId);
+                }
+
                 state.activeChatId = id;
                 const chat = state.chats.find(c => c.id === id);
                 if (!chat) return;
@@ -1754,6 +1792,11 @@
                 els.currentChatTitle.textContent = chat.title;
                 renderMessages(chat.messages);
                 renderChats(); // update active class
+
+                // Load draft for this chat
+                els.chatInput.value = loadDraft(id);
+                autoResizeInput();
+
                 els.chatInput.focus();
 
                 // Auto-close sidebar on mobile/tablet
@@ -1841,6 +1884,7 @@
                 els.chatInput.value = '';
                 els.chatInput.style.height = 'auto';
                 clearPendingImages();
+                clearDraft(state.activeChatId); // Clear saved draft after sending
                 updateSendButtonState();
 
                 // Add User Message (with images if any)
