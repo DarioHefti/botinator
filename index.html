@@ -2357,6 +2357,14 @@
                                 </svg>
                                 Copy
                             </button>
+                            <button class="message-action-btn read-aloud-btn" title="Read aloud">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                </svg>
+                                Read
+                            </button>
                             <button class="message-action-btn edit-msg-btn" title="Edit message">
                                 <svg class="icon" viewBox="0 0 24 24">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -2368,6 +2376,7 @@
                         
                         actionsDiv.querySelector('.regenerate-btn').onclick = () => regenerateResponse(index);
                         actionsDiv.querySelector('.edit-msg-btn').onclick = () => editMessage(index);
+                        actionsDiv.querySelector('.read-aloud-btn').onclick = (e) => readAloud(e, msg.content);
                         actionsDiv.querySelector('.copy-msg-btn').onclick = (e) => {
                             navigator.clipboard.writeText(msg.content).then(() => {
                                 e.target.closest('.copy-msg-btn').innerHTML = `
@@ -3211,6 +3220,83 @@
 
             function toggleModal(show) {
                 els.settingsModal.style.display = show ? 'flex' : 'none';
+            }
+
+            // --- Text-to-Speech ---
+            let currentUtterance = null;
+            let currentReadBtn = null;
+
+            function readAloud(e, content) {
+                const btn = e.target.closest('.read-aloud-btn');
+                
+                // If already reading this message, stop it
+                if (currentUtterance && currentReadBtn === btn) {
+                    speechSynthesis.cancel();
+                    resetReadButton(btn);
+                    currentUtterance = null;
+                    currentReadBtn = null;
+                    return;
+                }
+
+                // Stop any previous speech
+                if (currentUtterance) {
+                    speechSynthesis.cancel();
+                    if (currentReadBtn) resetReadButton(currentReadBtn);
+                }
+
+                // Strip markdown/HTML for cleaner speech
+                const plainText = content
+                    .replace(/```[\s\S]*?```/g, ' code block ')
+                    .replace(/`([^`]+)`/g, '$1')
+                    .replace(/\*\*([^*]+)\*\*/g, '$1')
+                    .replace(/\*([^*]+)\*/g, '$1')
+                    .replace(/#{1,6}\s*/g, '')
+                    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                    .replace(/<[^>]+>/g, '')
+                    .replace(/\n+/g, '. ')
+                    .trim();
+
+                const utterance = new SpeechSynthesisUtterance(plainText);
+                utterance.rate = 1;
+                utterance.pitch = 1;
+
+                // Update button to show "Stop"
+                btn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                    </svg>
+                    Stop
+                `;
+                btn.classList.add('speaking');
+
+                currentUtterance = utterance;
+                currentReadBtn = btn;
+
+                utterance.onend = () => {
+                    resetReadButton(btn);
+                    currentUtterance = null;
+                    currentReadBtn = null;
+                };
+
+                utterance.onerror = () => {
+                    resetReadButton(btn);
+                    currentUtterance = null;
+                    currentReadBtn = null;
+                };
+
+                speechSynthesis.speak(utterance);
+            }
+
+            function resetReadButton(btn) {
+                btn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                    </svg>
+                    Read
+                `;
+                btn.classList.remove('speaking');
             }
 
             function escapeHtml(text) {
