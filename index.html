@@ -72,6 +72,72 @@
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
         }
 
+        /* Light mode code block text fixes */
+        [data-theme="light"] pre,
+        [data-theme="light"] pre code,
+        [data-theme="light"] .mermaid-code,
+        [data-theme="light"] .mermaid-fallback {
+            color: #e6edf3 !important;
+        }
+
+        [data-theme="light"] pre code .hljs-keyword,
+        [data-theme="light"] pre code .hljs-selector-tag,
+        [data-theme="light"] pre code .hljs-literal,
+        [data-theme="light"] pre code .hljs-section,
+        [data-theme="light"] pre code .hljs-link {
+            color: #ff7b72 !important;
+        }
+
+        [data-theme="light"] pre code .hljs-string,
+        [data-theme="light"] pre code .hljs-title,
+        [data-theme="light"] pre code .hljs-name,
+        [data-theme="light"] pre code .hljs-type,
+        [data-theme="light"] pre code .hljs-attribute,
+        [data-theme="light"] pre code .hljs-symbol,
+        [data-theme="light"] pre code .hljs-bullet,
+        [data-theme="light"] pre code .hljs-addition,
+        [data-theme="light"] pre code .hljs-variable,
+        [data-theme="light"] pre code .hljs-template-tag,
+        [data-theme="light"] pre code .hljs-template-variable {
+            color: #a5d6ff !important;
+        }
+
+        [data-theme="light"] pre code .hljs-comment,
+        [data-theme="light"] pre code .hljs-quote,
+        [data-theme="light"] pre code .hljs-deletion,
+        [data-theme="light"] pre code .hljs-meta {
+            color: #8b949e !important;
+        }
+
+        [data-theme="light"] pre code .hljs-number,
+        [data-theme="light"] pre code .hljs-built_in,
+        [data-theme="light"] pre code .hljs-class .hljs-title,
+        [data-theme="light"] pre code .hljs-function .hljs-title {
+            color: #79c0ff !important;
+        }
+
+        [data-theme="light"] .code-action-btn {
+            color: #94a3b8 !important;
+        }
+
+        [data-theme="light"] .code-action-btn:hover {
+            color: white !important;
+        }
+
+        /* Inline code styling (single backticks in markdown) */
+        .message-content code:not(pre code) {
+            background: rgba(110, 118, 129, 0.25);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+        }
+
+        [data-theme="light"] .message-content code:not(pre code) {
+            background: rgba(175, 184, 193, 0.3);
+            color: #1e293b;
+        }
+
         * {
             box-sizing: border-box;
         }
