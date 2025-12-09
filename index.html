@@ -38,6 +38,7 @@
             --bg-message-ai: #1e293b;
             --bg-message-user: #6366f1;
             --bg-input: #334155;
+            --bg-secondary: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --border-color: #334155;
@@ -48,6 +49,22 @@
 
             --font-sans: 'Inter', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        [data-theme="light"] {
+            color-scheme: light;
+            --bg-app: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-message-ai: #f1f5f9;
+            --bg-message-user: #6366f1;
+            --bg-input: #e2e8f0;
+            --bg-secondary: #f1f5f9;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
         }
 
         * {
@@ -712,6 +729,31 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.85rem;
+        }
+
+        .theme-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--bg-input);
+            border: 2px solid transparent;
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .theme-btn:hover {
+            color: var(--text-main);
+            background: var(--border-color);
+        }
+
+        .theme-btn.active {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.1);
         }
 
         .llm-item {
@@ -1517,6 +1559,32 @@
                 <button class="close-modal" id="closeSettings">×</button>
             </div>
             <div class="modal-body">
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label class="form-label" style="font-weight:600; color:var(--text-main);">Appearance</label>
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <button type="button" class="theme-btn" id="themeDark" title="Dark Mode">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                            Dark
+                        </button>
+                        <button type="button" class="theme-btn" id="themeLight" title="Light Mode">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            Light
+                        </button>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label" style="font-weight:600; color:var(--text-main);">Manage LLMs</label>
                 </div>
@@ -1573,6 +1641,8 @@
                 llmList: document.getElementById('llmList'),
                 addLlmBtn: document.getElementById('addLlmBtn'),
                 cancelLlmBtn: document.getElementById('cancelLlmBtn'),
+                themeDark: document.getElementById('themeDark'),
+                themeLight: document.getElementById('themeLight'),
                 newLlmLabel: document.getElementById('newLlmLabel'),
                 newLlmUrl: document.getElementById('newLlmUrl'),
                 newLlmKey: document.getElementById('newLlmKey'),
@@ -1654,6 +1724,7 @@
                 }
 
                 loadState();
+                initTheme();
                 renderChats();
                 renderLlmSelect();
                 renderLlmList();
@@ -1675,6 +1746,8 @@
                 els.jumpBtn.addEventListener('click', scrollToLatestResponse);
                 els.jumpBottomBtn.addEventListener('click', () => scrollToBottom(true));
                 els.currentChatTitle.addEventListener('click', startRenameActiveChat);
+                els.themeDark.addEventListener('click', () => setTheme('dark'));
+                els.themeLight.addEventListener('click', () => setTheme('light'));
 
                 // Artifact Listeners
                 els.closeArtifactBtn.addEventListener('click', closeArtifact);
@@ -1737,6 +1810,24 @@
                     window.visualViewport.addEventListener('resize', handleVisualViewportResize);
                     handleVisualViewportResize(); // Initial call
                 }
+            }
+
+            // --- Theme Management ---
+            function setTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('botinator_theme', theme);
+                updateThemeButtons(theme);
+            }
+
+            function initTheme() {
+                const savedTheme = localStorage.getItem('botinator_theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeButtons(savedTheme);
+            }
+
+            function updateThemeButtons(theme) {
+                els.themeDark.classList.toggle('active', theme === 'dark');
+                els.themeLight.classList.toggle('active', theme === 'light');
             }
 
             // --- State Management ---
