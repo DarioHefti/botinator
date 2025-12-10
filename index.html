@@ -1768,6 +1768,16 @@
                                     <line x1="8" y1="23" x2="16" y2="23"></line>
                                 </svg>
                             </button>
+                            <button type="button" class="action-btn" id="summaryBtn" title="Generate Chat Summary">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
                             <button type="submit" class="action-btn send-btn" id="sendBtn" disabled>
                                 <svg class="icon" viewBox="0 0 24 24">
                                     <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -2016,6 +2026,7 @@
                 newLlmModelId: document.getElementById('newLlmModelId'),
                 newLlmSystemPrompt: document.getElementById('newLlmSystemPrompt'),
                 micBtn: document.getElementById('micBtn'),
+                summaryBtn: document.getElementById('summaryBtn'),
                 handsFreeBtn: document.getElementById('handsFreeBtn'),
                 jumpBtn: document.getElementById('jumpBtn'),
                 jumpBottomBtn: document.getElementById('jumpBottomBtn'),
@@ -2130,6 +2141,7 @@
                 els.addLlmBtn.addEventListener('click', addLlm);
                 els.cancelLlmBtn.addEventListener('click', cancelEdit);
                 els.micBtn.addEventListener('click', toggleSpeech);
+                els.summaryBtn.addEventListener('click', generateChatSummary);
                 els.handsFreeBtn.addEventListener('click', toggleHandsFree);
                 els.jumpBtn.addEventListener('click', scrollToLatestResponse);
                 els.jumpBottomBtn.addEventListener('click', () => scrollToBottom(true));
@@ -2870,6 +2882,85 @@
                             if (state.isHandsFree) startHandsFreeListening();
                         });
                     }
+                }
+            }
+
+            // --- Chat Summary ---
+            async function generateChatSummary() {
+                const streamChatId = state.activeChatId;
+                if (isChatStreaming(streamChatId)) return;
+
+                const chat = state.chats.find(c => c.id === streamChatId);
+                if (!chat || chat.messages.length === 0) {
+                    alert('No messages to summarize.');
+                    return;
+                }
+
+                const llmId = els.llmSelect.value;
+                const llm = state.llms.find(l => l.id === llmId);
+                if (!llm) {
+                    alert('Please select or configure an LLM in settings.');
+                    toggleModal(true);
+                    return;
+                }
+
+                // Build conversation text for summarization
+                const conversationText = chat.messages
+                    .filter(m => !m.pending)
+                    .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+                    .join('\n\n');
+
+                // Add user message indicating summary request
+                const userMessage = { role: 'user', content: '📋 Generate a summary of this conversation' };
+                chat.messages.push(userMessage);
+                renderMessages(chat.messages);
+
+                // Prepare AI Placeholder
+                const aiMsg = { role: 'assistant', content: '', pending: true };
+                chat.messages.push(aiMsg);
+                renderMessages(chat.messages);
+                saveState();
+
+                // API Call
+                state.streamingChats[streamChatId] = true;
+                state.abortControllers[streamChatId] = new AbortController();
+                updateSendBtnState();
+                renderChats();
+
+                try {
+                    const summaryPrompt = `Please provide a concise summary of the following conversation. For each exchange, briefly state:
+- What the user asked or discussed
+- What the key points of the response were
+
+Format it as a clear, readable summary with bullet points or numbered items.
+
+Conversation:
+${conversationText}`;
+
+                    const messages = [{ role: 'user', content: summaryPrompt }];
+
+                    await fetchStream(llm, messages, (chunk) => {
+                        aiMsg.content += chunk;
+                        if (state.activeChatId === streamChatId) {
+                            updateLastMessage(aiMsg.content);
+                        }
+                    }, state.abortControllers[streamChatId].signal);
+
+                    aiMsg.pending = false;
+                    saveState();
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        aiMsg.content += '\n\n*[Error: ' + err.message + ']*';
+                        if (state.activeChatId === streamChatId) {
+                            updateLastMessage(aiMsg.content);
+                        }
+                    }
+                } finally {
+                    delete state.streamingChats[streamChatId];
+                    delete state.abortControllers[streamChatId];
+                    updateSendBtnState();
+                    renderChats();
+                    saveState();
                 }
             }
 
