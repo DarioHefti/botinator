@@ -345,7 +345,328 @@
             background: #5A5D63;
         }
 
-        * {
+        /* Rainbow Disco Theme - Animated color cycling */
+        @property --rainbow-hue {
+            syntax: '<number>';
+            inherits: true;
+            initial-value: 0;
+        }
+
+        @keyframes rainbow-shift {
+            0% { --rainbow-hue: 0; }
+            100% { --rainbow-hue: 360; }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: brightness(1) saturate(1.2); }
+            50% { filter: brightness(1.1) saturate(1.4); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        [data-theme="rainbow"] {
+            color-scheme: dark;
+            --rainbow-hue: 0;
+            --bg-app: hsl(var(--rainbow-hue), 70%, 8%);
+            --bg-sidebar: hsl(calc(var(--rainbow-hue) + 30), 60%, 12%);
+            --bg-message-ai: hsl(calc(var(--rainbow-hue) + 60), 50%, 15%);
+            --bg-message-user: hsl(calc(var(--rainbow-hue) + 180), 80%, 45%);
+            --bg-input: hsl(calc(var(--rainbow-hue) + 90), 40%, 20%);
+            --bg-secondary: hsl(calc(var(--rainbow-hue) + 120), 50%, 12%);
+            --text-main: #ffffff;
+            --text-muted: hsl(calc(var(--rainbow-hue) + 150), 30%, 70%);
+            --border-color: hsl(calc(var(--rainbow-hue) + 210), 60%, 35%);
+            --accent-color: hsl(calc(var(--rainbow-hue) + 240), 90%, 65%);
+            --accent-hover: hsl(calc(var(--rainbow-hue) + 270), 85%, 55%);
+            --shadow-lg: 0 10px 40px hsla(var(--rainbow-hue), 100%, 50%, 0.3);
+            animation: rainbow-shift 7s linear infinite;
+        }
+
+        [data-theme="rainbow"] body,
+        [data-theme="rainbow"] .app-container {
+            background: linear-gradient(
+                135deg,
+                hsl(var(--rainbow-hue), 70%, 8%) 0%,
+                hsl(calc(var(--rainbow-hue) + 60), 60%, 10%) 25%,
+                hsl(calc(var(--rainbow-hue) + 120), 65%, 8%) 50%,
+                hsl(calc(var(--rainbow-hue) + 180), 60%, 10%) 75%,
+                hsl(calc(var(--rainbow-hue) + 240), 70%, 8%) 100%
+            );
+            background-size: 400% 400%;
+            animation: shimmer 8s ease infinite;
+        }
+
+        [data-theme="rainbow"] .sidebar {
+            background: linear-gradient(
+                180deg,
+                hsla(calc(var(--rainbow-hue) + 30), 60%, 15%, 0.95) 0%,
+                hsla(calc(var(--rainbow-hue) + 90), 50%, 12%, 0.95) 100%
+            );
+            border-right: 2px solid;
+            border-image: linear-gradient(
+                180deg,
+                hsl(var(--rainbow-hue), 100%, 60%),
+                hsl(calc(var(--rainbow-hue) + 120), 100%, 60%),
+                hsl(calc(var(--rainbow-hue) + 240), 100%, 60%)
+            ) 1;
+            backdrop-filter: blur(10px);
+        }
+
+        [data-theme="rainbow"] .chat-item {
+            border-radius: 12px;
+            margin: 4px 8px;
+            background: hsla(calc(var(--rainbow-hue) + 60), 40%, 20%, 0.5);
+            border: 1px solid hsla(calc(var(--rainbow-hue) + 90), 60%, 50%, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="rainbow"] .chat-item.active {
+            background: linear-gradient(
+                135deg,
+                hsla(var(--rainbow-hue), 80%, 50%, 0.3) 0%,
+                hsla(calc(var(--rainbow-hue) + 60), 80%, 50%, 0.3) 100%
+            );
+            border-color: hsl(var(--rainbow-hue), 100%, 65%);
+            box-shadow: 0 0 20px hsla(var(--rainbow-hue), 100%, 50%, 0.4);
+        }
+
+        [data-theme="rainbow"] .chat-item:hover {
+            background: hsla(calc(var(--rainbow-hue) + 30), 60%, 30%, 0.6);
+            transform: translateX(4px);
+        }
+
+        [data-theme="rainbow"] .new-chat-btn {
+            background: linear-gradient(
+                135deg,
+                hsl(var(--rainbow-hue), 80%, 50%) 0%,
+                hsl(calc(var(--rainbow-hue) + 60), 80%, 50%) 100%
+            );
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px hsla(var(--rainbow-hue), 100%, 50%, 0.4);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        [data-theme="rainbow"] .new-chat-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 25px hsla(var(--rainbow-hue), 100%, 50%, 0.6);
+        }
+
+        [data-theme="rainbow"] .message.ai .message-content {
+            background: linear-gradient(
+                135deg,
+                hsla(calc(var(--rainbow-hue) + 180), 40%, 15%, 0.9) 0%,
+                hsla(calc(var(--rainbow-hue) + 240), 40%, 18%, 0.9) 100%
+            );
+            border: 1px solid hsla(calc(var(--rainbow-hue) + 200), 60%, 50%, 0.4);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px hsla(calc(var(--rainbow-hue) + 180), 80%, 40%, 0.2);
+        }
+
+        [data-theme="rainbow"] .message.user .message-content {
+            background: linear-gradient(
+                135deg,
+                hsl(var(--rainbow-hue), 85%, 50%) 0%,
+                hsl(calc(var(--rainbow-hue) + 45), 85%, 45%) 50%,
+                hsl(calc(var(--rainbow-hue) + 90), 85%, 50%) 100%
+            );
+            border-radius: 16px;
+            box-shadow: 0 4px 25px hsla(var(--rainbow-hue), 100%, 50%, 0.5);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        [data-theme="rainbow"] .model-selector {
+            background: linear-gradient(
+                135deg,
+                hsla(calc(var(--rainbow-hue) + 120), 50%, 25%, 0.8) 0%,
+                hsla(calc(var(--rainbow-hue) + 180), 50%, 20%, 0.8) 100%
+            );
+            border: 1px solid hsla(calc(var(--rainbow-hue) + 150), 70%, 50%, 0.5);
+            border-radius: 10px;
+        }
+
+        [data-theme="rainbow"] .model-selector:hover {
+            border-color: hsl(calc(var(--rainbow-hue) + 150), 100%, 60%);
+            box-shadow: 0 0 15px hsla(calc(var(--rainbow-hue) + 150), 100%, 50%, 0.3);
+        }
+
+        [data-theme="rainbow"] .chat-input-container {
+            background: linear-gradient(
+                135deg,
+                hsla(calc(var(--rainbow-hue) + 270), 50%, 15%, 0.95) 0%,
+                hsla(calc(var(--rainbow-hue) + 330), 50%, 18%, 0.95) 100%
+            );
+            border: 2px solid;
+            border-image: linear-gradient(
+                90deg,
+                hsl(var(--rainbow-hue), 100%, 60%),
+                hsl(calc(var(--rainbow-hue) + 120), 100%, 60%),
+                hsl(calc(var(--rainbow-hue) + 240), 100%, 60%)
+            ) 1;
+            border-radius: 16px;
+            box-shadow: 0 0 30px hsla(var(--rainbow-hue), 80%, 50%, 0.2);
+        }
+
+        [data-theme="rainbow"] .chat-input {
+            background: transparent;
+            color: #fff;
+        }
+
+        [data-theme="rainbow"] .send-btn {
+            background: linear-gradient(
+                135deg,
+                hsl(calc(var(--rainbow-hue) + 60), 90%, 55%) 0%,
+                hsl(calc(var(--rainbow-hue) + 120), 90%, 50%) 100%
+            );
+            border-radius: 10px;
+            box-shadow: 0 4px 15px hsla(calc(var(--rainbow-hue) + 90), 100%, 50%, 0.4);
+        }
+
+        [data-theme="rainbow"] .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px hsla(calc(var(--rainbow-hue) + 90), 100%, 50%, 0.6);
+        }
+
+        /* Rainbow code block styling */
+        [data-theme="rainbow"] pre {
+            background: linear-gradient(
+                135deg,
+                hsla(calc(var(--rainbow-hue) + 200), 60%, 8%, 0.95) 0%,
+                hsla(calc(var(--rainbow-hue) + 260), 60%, 10%, 0.95) 100%
+            ) !important;
+            border: 1px solid hsla(calc(var(--rainbow-hue) + 220), 80%, 50%, 0.4);
+            border-radius: 12px;
+            box-shadow: inset 0 2px 10px hsla(calc(var(--rainbow-hue) + 200), 60%, 0%, 0.3);
+        }
+
+        [data-theme="rainbow"] pre code {
+            color: hsl(calc(var(--rainbow-hue) + 180), 20%, 90%) !important;
+        }
+
+        [data-theme="rainbow"] pre code .hljs-keyword,
+        [data-theme="rainbow"] pre code .hljs-selector-tag,
+        [data-theme="rainbow"] pre code .hljs-literal {
+            color: hsl(calc(var(--rainbow-hue) + 330), 100%, 70%) !important;
+        }
+
+        [data-theme="rainbow"] pre code .hljs-string,
+        [data-theme="rainbow"] pre code .hljs-title,
+        [data-theme="rainbow"] pre code .hljs-name {
+            color: hsl(calc(var(--rainbow-hue) + 90), 80%, 65%) !important;
+        }
+
+        [data-theme="rainbow"] pre code .hljs-comment,
+        [data-theme="rainbow"] pre code .hljs-quote {
+            color: hsl(calc(var(--rainbow-hue) + 150), 30%, 55%) !important;
+        }
+
+        [data-theme="rainbow"] pre code .hljs-number,
+        [data-theme="rainbow"] pre code .hljs-built_in {
+            color: hsl(calc(var(--rainbow-hue) + 200), 90%, 70%) !important;
+        }
+
+        [data-theme="rainbow"] .code-action-btn {
+            color: hsl(calc(var(--rainbow-hue) + 180), 50%, 60%) !important;
+        }
+
+        [data-theme="rainbow"] .code-action-btn:hover {
+            color: hsl(var(--rainbow-hue), 100%, 75%) !important;
+        }
+
+        [data-theme="rainbow"] .message-content code:not(pre code) {
+            background: linear-gradient(
+                90deg,
+                hsla(var(--rainbow-hue), 70%, 50%, 0.3) 0%,
+                hsla(calc(var(--rainbow-hue) + 60), 70%, 50%, 0.3) 100%
+            );
+            color: hsl(calc(var(--rainbow-hue) + 30), 100%, 80%);
+            border-radius: 6px;
+            padding: 3px 8px;
+        }
+
+        /* Rainbow settings modal */
+        [data-theme="rainbow"] .modal-content {
+            background: linear-gradient(
+                135deg,
+                hsla(calc(var(--rainbow-hue) + 240), 50%, 12%, 0.98) 0%,
+                hsla(calc(var(--rainbow-hue) + 300), 50%, 15%, 0.98) 100%
+            );
+            border: 2px solid;
+            border-image: linear-gradient(
+                135deg,
+                hsl(var(--rainbow-hue), 100%, 60%),
+                hsl(calc(var(--rainbow-hue) + 180), 100%, 60%)
+            ) 1;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px hsla(var(--rainbow-hue), 80%, 30%, 0.5);
+        }
+
+        [data-theme="rainbow"] .theme-btn {
+            background: linear-gradient(
+                135deg,
+                hsla(calc(var(--rainbow-hue) + 60), 50%, 25%, 0.8) 0%,
+                hsla(calc(var(--rainbow-hue) + 120), 50%, 20%, 0.8) 100%
+            );
+            border: 1px solid hsla(calc(var(--rainbow-hue) + 90), 60%, 50%, 0.5);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="rainbow"] .theme-btn:hover {
+            background: linear-gradient(
+                135deg,
+                hsla(calc(var(--rainbow-hue) + 30), 60%, 35%, 0.9) 0%,
+                hsla(calc(var(--rainbow-hue) + 90), 60%, 30%, 0.9) 100%
+            );
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px hsla(var(--rainbow-hue), 80%, 50%, 0.3);
+        }
+
+        [data-theme="rainbow"] .theme-btn.active {
+            background: linear-gradient(
+                135deg,
+                hsl(var(--rainbow-hue), 80%, 50%) 0%,
+                hsl(calc(var(--rainbow-hue) + 60), 80%, 50%) 100%
+            );
+            border-color: hsl(var(--rainbow-hue), 100%, 70%);
+            color: #fff;
+            box-shadow: 0 0 20px hsla(var(--rainbow-hue), 100%, 50%, 0.5);
+        }
+
+        /* Rainbow scrollbar */
+        [data-theme="rainbow"] ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        [data-theme="rainbow"] ::-webkit-scrollbar-track {
+            background: hsla(calc(var(--rainbow-hue) + 180), 40%, 10%, 0.5);
+        }
+
+        [data-theme="rainbow"] ::-webkit-scrollbar-thumb {
+            background: linear-gradient(
+                180deg,
+                hsl(var(--rainbow-hue), 80%, 50%),
+                hsl(calc(var(--rainbow-hue) + 120), 80%, 50%),
+                hsl(calc(var(--rainbow-hue) + 240), 80%, 50%)
+            );
+            border-radius: 5px;
+        }
+
+        [data-theme="rainbow"] ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(
+                180deg,
+                hsl(var(--rainbow-hue), 90%, 60%),
+                hsl(calc(var(--rainbow-hue) + 120), 90%, 60%),
+                hsl(calc(var(--rainbow-hue) + 240), 90%, 60%)
+            );
+        }
+
+        *
             box-sizing: border-box;
         }
 
@@ -2067,6 +2388,24 @@
                             </svg>
                             IntelliJ
                         </button>
+                        <button type="button" class="theme-btn" id="themeRainbow" title="Rainbow Disco">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z" stroke="url(#rainbowGrad)"></path>
+                                <defs>
+                                    <linearGradient id="rainbowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#ff0000"/>
+                                        <stop offset="17%" stop-color="#ff8000"/>
+                                        <stop offset="33%" stop-color="#ffff00"/>
+                                        <stop offset="50%" stop-color="#00ff00"/>
+                                        <stop offset="67%" stop-color="#00ffff"/>
+                                        <stop offset="83%" stop-color="#0000ff"/>
+                                        <stop offset="100%" stop-color="#ff00ff"/>
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="12" cy="12" r="4" fill="url(#rainbowGrad)"></circle>
+                            </svg>
+                            Rainbow
+                        </button>
                     </div>
                 </div>
 
@@ -2220,6 +2559,7 @@
                 themeDark: document.getElementById('themeDark'),
                 themeLight: document.getElementById('themeLight'),
                 themeIntellij: document.getElementById('themeIntellij'),
+                themeRainbow: document.getElementById('themeRainbow'),
                 textSizeSmall: document.getElementById('textSizeSmall'),
                 textSizeMedium: document.getElementById('textSizeMedium'),
                 textSizeLarge: document.getElementById('textSizeLarge'),
@@ -2352,6 +2692,7 @@
                 els.themeDark.addEventListener('click', () => setTheme('dark'));
                 els.themeLight.addEventListener('click', () => setTheme('light'));
                 els.themeIntellij.addEventListener('click', () => setTheme('intellij'));
+                els.themeRainbow.addEventListener('click', () => setTheme('rainbow'));
                 els.textSizeSmall.addEventListener('click', () => setTextSize('small'));
                 els.textSizeMedium.addEventListener('click', () => setTextSize('medium'));
                 els.textSizeLarge.addEventListener('click', () => setTextSize('large'));
@@ -2476,6 +2817,7 @@
                 els.themeDark.classList.toggle('active', theme === 'dark');
                 els.themeLight.classList.toggle('active', theme === 'light');
                 els.themeIntellij.classList.toggle('active', theme === 'intellij');
+                els.themeRainbow.classList.toggle('active', theme === 'rainbow');
             }
 
             // --- Text Size Management ---
