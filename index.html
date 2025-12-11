@@ -3125,15 +3125,20 @@
                 }
 
                 // Event listeners
-                els.voiceSelect.addEventListener('change', saveVoiceSettings);
+                els.voiceSelect.addEventListener('change', () => {
+                    saveVoiceSettings();
+                    previewSelectedVoice();
+                });
                 els.voiceRate.addEventListener('input', () => {
                     els.voiceRateValue.textContent = parseFloat(els.voiceRate.value).toFixed(1) + 'x';
                     saveVoiceSettings();
                 });
+                els.voiceRate.addEventListener('change', previewSelectedVoice);
                 els.voicePitch.addEventListener('input', () => {
                     els.voicePitchValue.textContent = parseFloat(els.voicePitch.value).toFixed(1);
                     saveVoiceSettings();
                 });
+                els.voicePitch.addEventListener('change', previewSelectedVoice);
                 els.testVoiceBtn.addEventListener('click', testVoice);
             }
 
@@ -3180,6 +3185,20 @@
                 if (settings.voice) utterance.voice = settings.voice;
                 utterance.rate = settings.rate;
                 utterance.pitch = settings.pitch;
+                speechSynthesis.speak(utterance);
+            }
+
+            function previewSelectedVoice() {
+                speechSynthesis.cancel();
+                const voiceName = els.voiceSelect.value;
+                const voice = availableVoices.find(v => v.name === voiceName) || null;
+                const rate = parseFloat(els.voiceRate.value);
+                const pitch = parseFloat(els.voicePitch.value);
+                
+                const utterance = new SpeechSynthesisUtterance('Hello, this is my voice.');
+                if (voice) utterance.voice = voice;
+                utterance.rate = rate;
+                utterance.pitch = pitch;
                 speechSynthesis.speak(utterance);
             }
 
