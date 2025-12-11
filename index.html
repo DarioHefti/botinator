@@ -1031,14 +1031,18 @@
         .chat-history {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            overflow-x: hidden;
+            padding: 20px 24px 20px 20px;
             scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
             gap: 16px;
-            max-width: 100%;
-            margin: 0 auto;
             width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chat-history > .message {
+            max-width: calc(100% - 20px);
         }
 
         /* Artifact Panel */
@@ -1094,6 +1098,8 @@
             opacity: 0;
             animation: fadeIn 0.3s forwards;
             width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .message.user {
@@ -1122,6 +1128,13 @@
             flex-shrink: 0;
             font-size: 0.9rem;
             font-weight: 600;
+            overflow: hidden;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .avatar.ai {
@@ -1572,7 +1585,8 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            max-width: 85%;
+            max-width: calc(100% - 52px); /* Account for avatar (36px) + gap (16px) */
+            min-width: 0;
         }
 
         .message.user .message-wrapper {
