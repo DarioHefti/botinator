@@ -1697,6 +1697,155 @@
             color: var(--text-muted);
         }
 
+        /* Knowledge Base Styles */
+        .knowledge-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .knowledge-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .knowledge-item:hover {
+            border-color: var(--accent-color);
+        }
+
+        .knowledge-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            cursor: pointer;
+            gap: 12px;
+        }
+
+        .knowledge-item-preview {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .knowledge-item-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .knowledge-delete-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .knowledge-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .knowledge-item-content {
+            display: none;
+            padding: 0 12px 12px 12px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .knowledge-item.expanded .knowledge-item-content {
+            display: block;
+        }
+
+        .knowledge-item.expanded .knowledge-item-preview {
+            white-space: normal;
+            overflow: visible;
+        }
+
+        .knowledge-expand-icon {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+            color: var(--text-muted);
+        }
+
+        .knowledge-item.expanded .knowledge-expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .knowledge-search-container {
+            margin-bottom: 16px;
+        }
+
+        .knowledge-search-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+
+        .knowledge-search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .knowledge-search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .knowledge-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .knowledge-empty-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .add-knowledge-btn {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .add-knowledge-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #10b981;
+        }
+
+        .add-knowledge-btn.added {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
         .message-edit-btn.cancel-btn:hover {
             background: rgba(255, 255, 255, 0.05);
             color: var(--text-main);
@@ -1925,6 +2074,33 @@
             text-align: center;
             color: var(--text-muted);
             font-size: 0.85rem;
+        }
+
+        .search-section-header {
+            padding: 8px 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .search-section-header .icon {
+            width: 12px;
+            height: 12px;
+        }
+
+        .search-result-item.knowledge-result {
+            border-left: 2px solid #10b981;
+        }
+
+        .search-result-item.knowledge-result .search-result-chat {
+            color: #10b981;
         }
 
         .message.highlighted .message-content {
@@ -2209,7 +2385,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" class="search-input" id="searchInput" placeholder="Search chats...">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search ...">
                 <button class="search-clear" id="searchClear">&times;</button>
             </div>
             <div class="search-results" id="searchResults"></div>
@@ -2220,6 +2396,15 @@
         </div>
 
         <div class="sidebar-footer">
+            <button class="user-menu-btn" id="knowledgeBtn">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    <line x1="12" y1="6" x2="12" y2="12"></line>
+                    <line x1="9" y1="9" x2="15" y2="9"></line>
+                </svg>
+                Knowledge
+            </button>
             <button class="user-menu-btn" id="settingsBtn">
                 <svg class="icon" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="3"></circle>
@@ -2360,6 +2545,24 @@
             </svg>
             Delete All Chats
         </button>
+    </div>
+
+    <!-- Knowledge Modal -->
+    <div class="modal-overlay" id="knowledgeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Knowledge Base</div>
+                <button class="close-modal" id="closeKnowledge">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="knowledge-search-container">
+                    <input type="text" class="knowledge-search-input" id="knowledgeSearchInput" placeholder="Search knowledge...">
+                </div>
+                <div class="knowledge-list" id="knowledgeList">
+                    <!-- Knowledge items will be injected here -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Settings Modal -->
@@ -2621,7 +2824,13 @@
                 avatarImageUpload: document.getElementById('avatarImageUpload'),
                 avatarText: document.getElementById('avatarText'),
                 avatarImageInput: document.getElementById('avatarImageInput'),
-                clearAvatarImage: document.getElementById('clearAvatarImage')
+                clearAvatarImage: document.getElementById('clearAvatarImage'),
+                // Knowledge Elements
+                knowledgeBtn: document.getElementById('knowledgeBtn'),
+                knowledgeModal: document.getElementById('knowledgeModal'),
+                closeKnowledge: document.getElementById('closeKnowledge'),
+                knowledgeList: document.getElementById('knowledgeList'),
+                knowledgeSearchInput: document.getElementById('knowledgeSearchInput')
             };
 
             let state = {
@@ -2695,6 +2904,10 @@
                 els.settingsBtn.addEventListener('click', () => toggleModal(true));
                 els.closeSettings.addEventListener('click', () => toggleModal(false));
                 els.settingsModal.addEventListener('click', (e) => { if (e.target === els.settingsModal) toggleModal(false); });
+                els.knowledgeBtn.addEventListener('click', () => toggleKnowledgeModal(true));
+                els.closeKnowledge.addEventListener('click', () => toggleKnowledgeModal(false));
+                els.knowledgeModal.addEventListener('click', (e) => { if (e.target === els.knowledgeModal) toggleKnowledgeModal(false); });
+                els.knowledgeSearchInput.addEventListener('input', debounce((e) => renderKnowledgeList(e.target.value), 200));
                 els.addLlmBtn.addEventListener('click', addLlm);
                 els.cancelLlmBtn.addEventListener('click', cancelEdit);
                 els.micBtn.addEventListener('click', toggleSpeech);
@@ -3069,6 +3282,94 @@
 
             function saveActiveLlm() {
                 localStorage.setItem('botinator_active_llm', els.llmSelect.value);
+            }
+
+            // --- Knowledge Base Management ---
+            function loadKnowledge() {
+                const saved = localStorage.getItem('botinator_knowledge');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            function saveKnowledge(knowledge) {
+                localStorage.setItem('botinator_knowledge', JSON.stringify(knowledge));
+            }
+
+            function addToKnowledge(content) {
+                const knowledge = loadKnowledge();
+                const id = 'k_' + Date.now();
+                knowledge.unshift({ id, content, savedAt: Date.now() });
+                saveKnowledge(knowledge);
+                return id;
+            }
+
+            function deleteFromKnowledge(id) {
+                let knowledge = loadKnowledge();
+                knowledge = knowledge.filter(k => k.id !== id);
+                saveKnowledge(knowledge);
+                renderKnowledgeList();
+            }
+
+            function renderKnowledgeList(searchTerm = '') {
+                const knowledge = loadKnowledge();
+                const filtered = searchTerm 
+                    ? knowledge.filter(k => k.content.toLowerCase().includes(searchTerm.toLowerCase()))
+                    : knowledge;
+
+                if (filtered.length === 0) {
+                    els.knowledgeList.innerHTML = `
+                        <div class="knowledge-empty">
+                            <div class="knowledge-empty-icon">📚</div>
+                            <div>${searchTerm ? 'No matching knowledge found' : 'No saved knowledge yet'}</div>
+                            <div style="font-size: 0.8rem; margin-top: 4px;">
+                                ${searchTerm ? 'Try a different search term' : 'Hover over AI responses and click "Add to Knowledge" to save them'}
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                els.knowledgeList.innerHTML = filtered.map(k => `
+                    <div class="knowledge-item" data-id="${k.id}">
+                        <div class="knowledge-item-header">
+                            <svg class="knowledge-expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                            <div class="knowledge-item-preview">${escapeHtml(k.content.substring(0, 150))}${k.content.length > 150 ? '...' : ''}</div>
+                            <div class="knowledge-item-actions">
+                                <button class="knowledge-delete-btn" title="Delete" onclick="event.stopPropagation();">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="knowledge-item-content">${renderMarkdown(k.content)}</div>
+                    </div>
+                `).join('');
+
+                // Add event listeners
+                els.knowledgeList.querySelectorAll('.knowledge-item').forEach(item => {
+                    const id = item.dataset.id;
+                    
+                    item.querySelector('.knowledge-item-header').addEventListener('click', (e) => {
+                        if (!e.target.closest('.knowledge-delete-btn')) {
+                            item.classList.toggle('expanded');
+                        }
+                    });
+
+                    item.querySelector('.knowledge-delete-btn').addEventListener('click', () => {
+                        deleteFromKnowledge(id);
+                    });
+                });
+            }
+
+            function toggleKnowledgeModal(show) {
+                els.knowledgeModal.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    els.knowledgeSearchInput.value = '';
+                    renderKnowledgeList();
+                    els.knowledgeSearchInput.focus();
+                }
             }
 
             // --- Draft Management ---
@@ -3717,11 +4018,43 @@ ${conversationText}`;
                                 </svg>
                                 Edit
                             </button>
+                            <button class="message-action-btn add-knowledge-btn" title="Add to Knowledge Base">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                    <line x1="12" y1="6" x2="12" y2="12"></line>
+                                    <line x1="9" y1="9" x2="15" y2="9"></line>
+                                </svg>
+                                Add to Knowledge
+                            </button>
                         `;
                         
                         actionsDiv.querySelector('.regenerate-btn').onclick = () => regenerateResponse(index);
                         actionsDiv.querySelector('.edit-msg-btn').onclick = () => editMessage(index);
                         actionsDiv.querySelector('.read-aloud-btn').onclick = (e) => readAloud(e, msg.content);
+                        actionsDiv.querySelector('.add-knowledge-btn').onclick = (e) => {
+                            addToKnowledge(msg.content);
+                            const btn = e.target.closest('.add-knowledge-btn');
+                            btn.classList.add('added');
+                            btn.innerHTML = `
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Added!
+                            `;
+                            setTimeout(() => {
+                                btn.classList.remove('added');
+                                btn.innerHTML = `
+                                    <svg class="icon" viewBox="0 0 24 24">
+                                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                        <line x1="12" y1="6" x2="12" y2="12"></line>
+                                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                                    </svg>
+                                    Add to Knowledge
+                                `;
+                            }, 2000);
+                        };
                         actionsDiv.querySelector('.copy-msg-btn').onclick = (e) => {
                             navigator.clipboard.writeText(msg.content).then(() => {
                                 e.target.closest('.copy-msg-btn').innerHTML = `
@@ -5021,11 +5354,12 @@ ${conversationText}`;
                     return;
                 }
 
-                const results = [];
+                // Search chats
+                const chatResults = [];
                 state.chats.forEach(chat => {
                     chat.messages.forEach((msg, msgIndex) => {
                         if (msg.content && msg.content.toLowerCase().includes(query)) {
-                            results.push({
+                            chatResults.push({
                                 chatId: chat.id,
                                 chatTitle: chat.title,
                                 messageIndex: msgIndex,
@@ -5036,42 +5370,105 @@ ${conversationText}`;
                     });
                 });
 
-                renderSearchResults(results, query);
+                // Search knowledge base
+                const knowledge = loadKnowledge();
+                const knowledgeResults = knowledge.filter(k => 
+                    k.content.toLowerCase().includes(query)
+                ).map(k => ({
+                    id: k.id,
+                    content: k.content
+                }));
+
+                renderSearchResults(chatResults, knowledgeResults, query);
             }
 
-            function renderSearchResults(results, query) {
-                if (results.length === 0) {
+            function renderSearchResults(chatResults, knowledgeResults, query) {
+                if (chatResults.length === 0 && knowledgeResults.length === 0) {
                     els.searchResults.innerHTML = '<div class="search-no-results">No results found</div>';
                     return;
                 }
 
                 els.searchResults.innerHTML = '';
-                // Limit to 20 results for performance
-                results.slice(0, 20).forEach(result => {
-                    const item = document.createElement('div');
-                    item.className = 'search-result-item';
-                    
-                    // Highlight the matching text
-                    const highlightedText = highlightMatch(result.content, query);
-                    
-                    item.innerHTML = `
-                        <div class="search-result-chat">${escapeHtml(result.chatTitle)}</div>
-                        <div class="search-result-text">${highlightedText}</div>
-                    `;
-                    
-                    item.onclick = () => {
-                        navigateToSearchResult(result.chatId, result.messageIndex);
-                        clearSearch();
-                    };
-                    
-                    els.searchResults.appendChild(item);
-                });
 
-                if (results.length > 20) {
-                    const more = document.createElement('div');
-                    more.className = 'search-no-results';
-                    more.textContent = `... and ${results.length - 20} more results`;
-                    els.searchResults.appendChild(more);
+                // Render chat results
+                if (chatResults.length > 0) {
+                    const chatHeader = document.createElement('div');
+                    chatHeader.className = 'search-section-header';
+                    chatHeader.innerHTML = `
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Chat Results (${chatResults.length})
+                    `;
+                    els.searchResults.appendChild(chatHeader);
+
+                    // Limit to 10 chat results
+                    chatResults.slice(0, 10).forEach(result => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item';
+                        
+                        const highlightedText = highlightMatch(result.content, query);
+                        
+                        item.innerHTML = `
+                            <div class="search-result-chat">${escapeHtml(result.chatTitle)}</div>
+                            <div class="search-result-text">${highlightedText}</div>
+                        `;
+                        
+                        item.onclick = () => {
+                            navigateToSearchResult(result.chatId, result.messageIndex);
+                            clearSearch();
+                        };
+                        
+                        els.searchResults.appendChild(item);
+                    });
+
+                    if (chatResults.length > 10) {
+                        const more = document.createElement('div');
+                        more.className = 'search-no-results';
+                        more.textContent = `... and ${chatResults.length - 10} more chat results`;
+                        els.searchResults.appendChild(more);
+                    }
+                }
+
+                // Render knowledge results
+                if (knowledgeResults.length > 0) {
+                    const knowledgeHeader = document.createElement('div');
+                    knowledgeHeader.className = 'search-section-header';
+                    knowledgeHeader.innerHTML = `
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        Knowledge Results (${knowledgeResults.length})
+                    `;
+                    els.searchResults.appendChild(knowledgeHeader);
+
+                    // Limit to 10 knowledge results
+                    knowledgeResults.slice(0, 10).forEach(result => {
+                        const item = document.createElement('div');
+                        item.className = 'search-result-item knowledge-result';
+                        
+                        const highlightedText = highlightMatch(result.content, query);
+                        
+                        item.innerHTML = `
+                            <div class="search-result-chat">Knowledge Base</div>
+                            <div class="search-result-text">${highlightedText}</div>
+                        `;
+                        
+                        item.onclick = () => {
+                            navigateToKnowledgeResult(result.id);
+                            clearSearch();
+                        };
+                        
+                        els.searchResults.appendChild(item);
+                    });
+
+                    if (knowledgeResults.length > 10) {
+                        const more = document.createElement('div');
+                        more.className = 'search-no-results';
+                        more.textContent = `... and ${knowledgeResults.length - 10} more knowledge results`;
+                        els.searchResults.appendChild(more);
+                    }
                 }
             }
 
@@ -5107,6 +5504,23 @@ ${conversationText}`;
                         messageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         messageEl.classList.add('highlighted');
                         setTimeout(() => messageEl.classList.remove('highlighted'), 2000);
+                    }
+                }, 100);
+            }
+
+            function navigateToKnowledgeResult(knowledgeId) {
+                toggleKnowledgeModal(true);
+                
+                // Wait for render, then expand and highlight the knowledge item
+                setTimeout(() => {
+                    const knowledgeItem = els.knowledgeList.querySelector(`.knowledge-item[data-id="${knowledgeId}"]`);
+                    if (knowledgeItem) {
+                        knowledgeItem.classList.add('expanded');
+                        knowledgeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        knowledgeItem.style.boxShadow = '0 0 0 2px var(--accent-color)';
+                        setTimeout(() => {
+                            knowledgeItem.style.boxShadow = '';
+                        }, 2000);
                     }
                 }, 100);
             }
