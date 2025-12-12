@@ -2427,6 +2427,21 @@
             </button>
             <div id="currentChatTitle" style="font-weight:600; cursor:pointer;" title="Click to rename">Botinator</div>
             <div style="display:flex; gap:8px; align-items:center;">
+                <button class="action-btn" id="exportChatBtn" title="Export Chat (Shift+Click to export all)" style="padding:8px; border-radius:8px; border:1px solid transparent;">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                </button>
+                <button class="action-btn" id="importChatBtn" title="Import Chat" style="padding:8px; border-radius:8px; border:1px solid transparent;">
+                    <svg class="icon" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </button>
+                <input type="file" id="importFileInput" accept=".json" style="display:none;">
                 <button class="action-btn" id="handsFreeBtn" title="Hands-Free Mode" style="padding:8px; border-radius:8px; border:1px solid transparent;">
                     <svg class="icon" viewBox="0 0 24 24">
                         <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
@@ -2534,6 +2549,14 @@
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
             Rename Chat
+        </button>
+        <button class="context-menu-item" id="ctxExportChat">
+            <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export Chat
         </button>
         <div class="context-menu-divider"></div>
         <button class="context-menu-item danger" id="ctxDeleteAllChats">
@@ -2808,6 +2831,9 @@
                 newLlmSystemPrompt: document.getElementById('newLlmSystemPrompt'),
                 micBtn: document.getElementById('micBtn'),
                 summaryBtn: document.getElementById('summaryBtn'),
+                exportChatBtn: document.getElementById('exportChatBtn'),
+                importChatBtn: document.getElementById('importChatBtn'),
+                importFileInput: document.getElementById('importFileInput'),
                 handsFreeBtn: document.getElementById('handsFreeBtn'),
                 jumpBtn: document.getElementById('jumpBtn'),
                 jumpBottomBtn: document.getElementById('jumpBottomBtn'),
@@ -2831,6 +2857,7 @@
                 chatContextMenu: document.getElementById('chatContextMenu'),
                 ctxDeleteChat: document.getElementById('ctxDeleteChat'),
                 ctxRenameChat: document.getElementById('ctxRenameChat'),
+                ctxExportChat: document.getElementById('ctxExportChat'),
                 ctxDeleteAllChats: document.getElementById('ctxDeleteAllChats'),
                 // Easter Egg
                 appTitle: document.getElementById('appTitle'),
@@ -2940,6 +2967,15 @@
                 els.cancelLlmBtn.addEventListener('click', cancelEdit);
                 els.micBtn.addEventListener('click', toggleSpeech);
                 els.summaryBtn.addEventListener('click', generateChatSummary);
+                els.exportChatBtn.addEventListener('click', (e) => {
+                    if (e.shiftKey) {
+                        exportAllChats();
+                    } else {
+                        exportCurrentChat();
+                    }
+                });
+                els.importChatBtn.addEventListener('click', () => els.importFileInput.click());
+                els.importFileInput.addEventListener('change', handleImportChat);
                 els.handsFreeBtn.addEventListener('click', toggleHandsFree);
                 els.jumpBtn.addEventListener('click', scrollToLatestResponse);
                 els.jumpBtn.addEventListener('dblclick', scrollToFirstMessage);
@@ -2997,6 +3033,12 @@
                 els.ctxRenameChat.addEventListener('click', () => {
                     if (state.contextMenuChatId) {
                         startRenameChatById(state.contextMenuChatId);
+                    }
+                    hideContextMenu();
+                });
+                els.ctxExportChat.addEventListener('click', () => {
+                    if (state.contextMenuChatId) {
+                        exportChatById(state.contextMenuChatId);
                     }
                     hideContextMenu();
                 });
@@ -3511,6 +3553,140 @@
                 const drafts = JSON.parse(localStorage.getItem('botinator_drafts') || '{}');
                 delete drafts[chatId];
                 localStorage.setItem('botinator_drafts', JSON.stringify(drafts));
+            }
+
+            // --- Export/Import Functions ---
+            function exportCurrentChat() {
+                if (!state.activeChatId) {
+                    alert('No active chat to export');
+                    return;
+                }
+                exportChatById(state.activeChatId);
+            }
+
+            function exportChatById(chatId) {
+                const chat = state.chats.find(c => c.id === chatId);
+                if (!chat) {
+                    alert('Chat not found');
+                    return;
+                }
+
+                const exportData = {
+                    version: '1.0',
+                    exportedAt: new Date().toISOString(),
+                    chat: {
+                        id: chat.id,
+                        title: chat.title,
+                        messages: chat.messages || [],
+                        systemPrompt: chat.systemPrompt || ''
+                    }
+                };
+
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `botinator-chat-${chat.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-${Date.now()}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+
+            function exportAllChats() {
+                if (state.chats.length === 0) {
+                    alert('No chats to export');
+                    return;
+                }
+
+                const exportData = {
+                    version: '1.0',
+                    exportedAt: new Date().toISOString(),
+                    chats: state.chats.map(chat => ({
+                        id: chat.id,
+                        title: chat.title,
+                        messages: chat.messages || [],
+                        systemPrompt: chat.systemPrompt || ''
+                    }))
+                };
+
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `botinator-all-chats-${Date.now()}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+
+            function handleImportChat(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importData = JSON.parse(e.target.result);
+                        
+                        // Handle different export formats
+                        let chatsToImport = [];
+                        if (importData.chat) {
+                            // Single chat export
+                            chatsToImport = [importData.chat];
+                        } else if (importData.chats && Array.isArray(importData.chats)) {
+                            // Multiple chats export
+                            chatsToImport = importData.chats;
+                        } else if (Array.isArray(importData)) {
+                            // Direct array of chats
+                            chatsToImport = importData;
+                        } else {
+                            throw new Error('Invalid import format');
+                        }
+
+                        if (chatsToImport.length === 0) {
+                            alert('No chats found in import file');
+                            return;
+                        }
+
+                        // Validate and import chats
+                        let importedCount = 0;
+                        chatsToImport.forEach(chatData => {
+                            if (chatData.title && Array.isArray(chatData.messages)) {
+                                const newChat = {
+                                    id: 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                                    title: chatData.title || 'Imported Chat',
+                                    messages: chatData.messages || [],
+                                    systemPrompt: chatData.systemPrompt || ''
+                                };
+                                state.chats.unshift(newChat);
+                                importedCount++;
+                            }
+                        });
+
+                        if (importedCount > 0) {
+                            saveState();
+                            renderChats();
+                            if (importedCount === 1) {
+                                // If only one chat imported, make it active
+                                setActiveChat(state.chats[0].id);
+                            }
+                            alert(`Successfully imported ${importedCount} chat(s)`);
+                        } else {
+                            alert('No valid chats found in import file');
+                        }
+                    } catch (error) {
+                        console.error('Import error:', error);
+                        alert('Failed to import chat. Please check the file format.');
+                    }
+                };
+                reader.readAsText(file);
+                
+                // Reset file input so same file can be imported again
+                event.target.value = '';
             }
 
             // --- Chat Logic ---
