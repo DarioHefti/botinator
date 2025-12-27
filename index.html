@@ -1871,6 +1871,58 @@
             transform: rotate(180deg);
         }
 
+        /* Add Knowledge Styles */
+        .add-knowledge-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .knowledge-add-input {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: var(--transition);
+        }
+
+        .knowledge-add-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .knowledge-save-btn {
+            align-self: flex-end;
+            padding: 8px 16px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .knowledge-save-btn:hover {
+            background: #5254f8;
+            transform: translateY(-1px);
+        }
+
+        .knowledge-save-btn:active {
+            transform: translateY(0);
+        }
+
         .knowledge-search-container {
             margin-bottom: 16px;
         }
@@ -2655,6 +2707,10 @@
                 <button class="close-modal" id="closeKnowledge">×</button>
             </div>
             <div class="modal-body">
+                <div class="add-knowledge-container">
+                    <textarea class="knowledge-add-input" id="knowledgeAddInput" placeholder="Enter text to add to knowledge base..."></textarea>
+                    <button class="knowledge-save-btn" id="knowledgeSaveBtn">Save to Knowledge</button>
+                </div>
                 <div class="knowledge-search-container">
                     <input type="text" class="knowledge-search-input" id="knowledgeSearchInput" placeholder="Search knowledge...">
                 </div>
@@ -2956,6 +3012,8 @@
                 closeKnowledge: document.getElementById('closeKnowledge'),
                 knowledgeList: document.getElementById('knowledgeList'),
                 knowledgeSearchInput: document.getElementById('knowledgeSearchInput'),
+                knowledgeAddInput: document.getElementById('knowledgeAddInput'),
+                knowledgeSaveBtn: document.getElementById('knowledgeSaveBtn'),
                 // Voice Settings Elements
                 voiceSelect: document.getElementById('voiceSelect'),
                 voiceRate: document.getElementById('voiceRate'),
@@ -3065,6 +3123,25 @@
                 els.knowledgeBtn.addEventListener('click', () => toggleKnowledgeModal(true));
                 els.closeKnowledge.addEventListener('click', () => toggleKnowledgeModal(false));
                 els.knowledgeModal.addEventListener('click', (e) => { if (e.target === els.knowledgeModal) toggleKnowledgeModal(false); });
+                
+                els.knowledgeSaveBtn.addEventListener('click', () => {
+                    const content = els.knowledgeAddInput.value.trim();
+                    if (content) {
+                        addToKnowledge(content);
+                        els.knowledgeAddInput.value = '';
+                        renderKnowledgeList();
+                        
+                        // Show success feedback on button
+                        const originalText = els.knowledgeSaveBtn.textContent;
+                        els.knowledgeSaveBtn.textContent = 'Saved!';
+                        els.knowledgeSaveBtn.style.background = '#10b981';
+                        setTimeout(() => {
+                            els.knowledgeSaveBtn.textContent = originalText;
+                            els.knowledgeSaveBtn.style.background = '';
+                        }, 2000);
+                    }
+                });
+
                 els.knowledgeSearchInput.addEventListener('input', debounce((e) => renderKnowledgeList(e.target.value), 200));
                 els.addLlmBtn.addEventListener('click', addLlm);
                 els.cancelLlmBtn.addEventListener('click', cancelEdit);
