@@ -1067,7 +1067,6 @@
             overflow-y: auto;
             overflow-x: hidden;
             padding: 20px 24px 20px 20px;
-            scroll-behavior: smooth;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -3159,7 +3158,7 @@
                 els.handsFreeBtn.addEventListener('click', toggleHandsFree);
                 els.jumpBtn.addEventListener('click', scrollToLatestResponse);
                 els.jumpBtn.addEventListener('dblclick', scrollToFirstMessage);
-                els.jumpBottomBtn.addEventListener('click', () => scrollToBottom(true));
+                els.jumpBottomBtn.addEventListener('click', () => scrollToBottom(true, true));
                 els.currentChatTitle.addEventListener('click', startRenameActiveChat);
                 els.themeDark.addEventListener('click', () => setTheme('dark'));
                 els.themeLight.addEventListener('click', () => setTheme('light'));
@@ -5538,9 +5537,13 @@ ${conversationText}`;
                 }
             }
 
-            function scrollToBottom(force = false) {
+            function scrollToBottom(force = false, smooth = false) {
                 if (force || state.autoScrollEnabled) {
-                    els.chatHistory.scrollTop = els.chatHistory.scrollHeight;
+                    if (smooth) {
+                        els.chatHistory.scrollTo({ top: els.chatHistory.scrollHeight, behavior: 'smooth' });
+                    } else {
+                        els.chatHistory.scrollTop = els.chatHistory.scrollHeight;
+                    }
                 }
             }
 
