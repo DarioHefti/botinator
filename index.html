@@ -3828,6 +3828,9 @@
                         });
                         const messages = [...systemMsg, ...historyPayload];
 
+                        // Force reset auto-scroll on new message generation
+                        state.autoScrollEnabled = true;
+
                         await fetchStream(llm, messages, (chunk) => {
                             aiMsg.content += chunk;
                             // Only update UI if we're still viewing this chat
@@ -4574,6 +4577,9 @@
                     });
                     const messages = [...systemMsg, ...historyPayload];
 
+                    // Force reset auto-scroll on new message generation
+                    state.autoScrollEnabled = true;
+
                     await fetchStream(llm, messages, (chunk) => {
                         aiMsg.content += chunk;
                         // Only update UI if we're still viewing this chat
@@ -4712,6 +4718,9 @@ Conversation:
 ${conversationText}`;
 
                     const messages = [{ role: 'user', content: summaryPrompt }];
+
+                    // Force reset auto-scroll on new message generation
+                    state.autoScrollEnabled = true;
 
                     await fetchStream(llm, messages, (chunk) => {
                         aiMsg.content += chunk;
@@ -5610,6 +5619,9 @@ ${conversationText}`;
                 state.abortControllers[streamChatId] = new AbortController();
                 updateSendBtnState();
                 renderChats();
+
+                // Force reset auto-scroll on new message generation
+                state.autoScrollEnabled = true;
 
                 try {
                     await fetchStream(llm, messages, (chunk) => {
