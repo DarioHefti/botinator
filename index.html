@@ -1759,6 +1759,95 @@
             color: var(--text-muted);
         }
 
+        /* User message actions */
+        .message.user .message-actions {
+            justify-content: flex-end;
+        }
+
+        /* Version navigation styles */
+        .version-navigator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            justify-content: flex-end;
+        }
+
+        .message.ai .version-navigator {
+            justify-content: flex-start;
+        }
+
+        .version-nav-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .version-nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+            color: var(--text-main);
+        }
+
+        .version-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .version-nav-btn .icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .version-indicator {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* User message edit container */
+        .user-edit-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .user-edit-textarea {
+            box-sizing: border-box;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .user-edit-textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .user-edit-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
         /* Knowledge Base Styles */
         .knowledge-list {
             display: flex;
@@ -4972,6 +5061,71 @@ ${conversationText}`;
 
                     wrapper.appendChild(contentDiv);
 
+                    // Add version navigator for user messages with versions
+                    if (msg.role === 'user' && msg.versions && msg.versions.length > 1) {
+                        const versionNav = document.createElement('div');
+                        versionNav.className = 'version-navigator';
+                        const currentVer = (msg.currentVersion || 0) + 1;
+                        const totalVers = msg.versions.length;
+                        versionNav.innerHTML = `
+                            <button class="version-nav-btn prev-version" title="Previous version" ${currentVer <= 1 ? 'disabled' : ''}>
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <span class="version-indicator">${currentVer} / ${totalVers}</span>
+                            <button class="version-nav-btn next-version" title="Next version" ${currentVer >= totalVers ? 'disabled' : ''}>
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        `;
+                        versionNav.querySelector('.prev-version').onclick = () => switchVersion(index, -1);
+                        versionNav.querySelector('.next-version').onclick = () => switchVersion(index, 1);
+                        wrapper.appendChild(versionNav);
+                    }
+
+                    // Add action buttons for user messages
+                    if (msg.role === 'user') {
+                        const userActionsDiv = document.createElement('div');
+                        userActionsDiv.className = 'message-actions';
+                        userActionsDiv.innerHTML = `
+                            <button class="message-action-btn edit-user-msg-btn" title="Edit message">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Edit
+                            </button>
+                        `;
+                        userActionsDiv.querySelector('.edit-user-msg-btn').onclick = () => editUserMessage(index);
+                        wrapper.appendChild(userActionsDiv);
+                    }
+
+                    // Add version navigator for AI messages with versions
+                    if (msg.role === 'assistant' && !msg.pending && msg.versions && msg.versions.length > 1) {
+                        const versionNav = document.createElement('div');
+                        versionNav.className = 'version-navigator';
+                        const currentVer = (msg.currentVersion || 0) + 1;
+                        const totalVers = msg.versions.length;
+                        versionNav.innerHTML = `
+                            <button class="version-nav-btn prev-version" title="Previous version" ${currentVer <= 1 ? 'disabled' : ''}>
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <span class="version-indicator">${currentVer} / ${totalVers}</span>
+                            <button class="version-nav-btn next-version" title="Next version" ${currentVer >= totalVers ? 'disabled' : ''}>
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        `;
+                        versionNav.querySelector('.prev-version').onclick = () => switchVersion(index, -1);
+                        versionNav.querySelector('.next-version').onclick = () => switchVersion(index, 1);
+                        wrapper.insertBefore(versionNav, wrapper.firstChild);
+                    }
+
                     // Add action buttons for AI messages (not pending)
                     if (msg.role === 'assistant' && !msg.pending) {
                         const actionsDiv = document.createElement('div');
@@ -5737,6 +5891,340 @@ ${conversationText}`;
 
                 wrapper.appendChild(editContainer);
                 textarea.focus();
+            }
+
+            function editUserMessage(messageIndex) {
+                const chat = state.chats.find(c => c.id === state.activeChatId);
+                if (!chat || messageIndex < 0) return;
+
+                const msg = chat.messages[messageIndex];
+                if (!msg || msg.role !== 'user') return;
+
+                const msgDiv = els.chatHistory.querySelector(`.message[data-index="${messageIndex}"]`);
+                if (!msgDiv) return;
+
+                const wrapper = msgDiv.querySelector('.message-wrapper');
+                const contentDiv = msgDiv.querySelector('.message-content');
+                const actionsDiv = msgDiv.querySelector('.message-actions');
+                const versionNav = msgDiv.querySelector('.version-navigator');
+
+                if (!wrapper || !contentDiv) return;
+
+                // Store original content for cancel
+                const originalContent = msg.content;
+
+                // Hide original content and actions
+                contentDiv.style.display = 'none';
+                if (actionsDiv) actionsDiv.style.display = 'none';
+                if (versionNav) versionNav.style.display = 'none';
+
+                // Create edit container
+                const editContainer = document.createElement('div');
+                editContainer.className = 'user-edit-container';
+
+                const textarea = document.createElement('textarea');
+                textarea.className = 'user-edit-textarea';
+                textarea.value = originalContent === '(Image attached)' ? '' : originalContent;
+                textarea.placeholder = 'Edit your message...';
+
+                const editActions = document.createElement('div');
+                editActions.className = 'user-edit-actions';
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'message-edit-btn cancel-btn';
+                cancelBtn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24" width="14" height="14">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Cancel
+                `;
+                cancelBtn.onclick = () => {
+                    editContainer.remove();
+                    contentDiv.style.display = '';
+                    if (actionsDiv) actionsDiv.style.display = '';
+                    if (versionNav) versionNav.style.display = '';
+                };
+
+                const saveAndSubmitBtn = document.createElement('button');
+                saveAndSubmitBtn.className = 'message-edit-btn save-btn';
+                saveAndSubmitBtn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24" width="14" height="14">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                    Save & Submit
+                `;
+                saveAndSubmitBtn.onclick = async () => {
+                    const newContent = textarea.value.trim();
+                    if (!newContent && (!msg.images || msg.images.length === 0)) {
+                        alert('Please enter a message.');
+                        return;
+                    }
+                    
+                    // Store this as an edit state and trigger new submission
+                    state.editingMessageIndex = messageIndex;
+                    state.editingMessageContent = newContent || '(Image attached)';
+                    state.editingMessageImages = msg.images ? [...msg.images] : [];
+                    
+                    // Submit the edited message
+                    await submitEditedMessage();
+                };
+
+                editActions.appendChild(cancelBtn);
+                editActions.appendChild(saveAndSubmitBtn);
+                editContainer.appendChild(textarea);
+                editContainer.appendChild(editActions);
+
+                wrapper.appendChild(editContainer);
+                textarea.focus();
+            }
+
+            async function submitEditedMessage() {
+                const chat = state.chats.find(c => c.id === state.activeChatId);
+                const messageIndex = state.editingMessageIndex;
+                const newContent = state.editingMessageContent;
+                const images = state.editingMessageImages;
+                
+                if (!chat || messageIndex === undefined) return;
+                
+                const userMsg = chat.messages[messageIndex];
+                if (!userMsg || userMsg.role !== 'user') return;
+                
+                // Find the corresponding AI response (next message)
+                const aiMsgIndex = messageIndex + 1;
+                const aiMsg = chat.messages[aiMsgIndex];
+                
+                // Initialize versions array if not exists
+                if (!userMsg.versions) {
+                    userMsg.versions = [{
+                        content: userMsg.content,
+                        images: userMsg.images ? [...userMsg.images] : []
+                    }];
+                }
+                if (aiMsg && aiMsg.role === 'assistant' && !aiMsg.versions) {
+                    aiMsg.versions = [{
+                        content: aiMsg.content
+                    }];
+                }
+                
+                // Add new version for user message
+                userMsg.versions.push({
+                    content: newContent,
+                    images: images ? [...images] : []
+                });
+                userMsg.currentVersion = userMsg.versions.length - 1;
+                userMsg.content = newContent;
+                userMsg.images = images ? [...images] : userMsg.images;
+                
+                // Clear edit state
+                delete state.editingMessageIndex;
+                delete state.editingMessageContent;
+                delete state.editingMessageImages;
+                
+                // Check if we have an AI response to regenerate
+                if (aiMsg && aiMsg.role === 'assistant') {
+                    // Add placeholder for new AI response version
+                    aiMsg.versions.push({
+                        content: ''
+                    });
+                    aiMsg.currentVersion = aiMsg.versions.length - 1;
+                    aiMsg.content = '';
+                    aiMsg.pending = true;
+                    
+                    renderMessages(chat.messages);
+                    saveState();
+                    
+                    // Now regenerate the response
+                    const llmId = els.llmSelect.value;
+                    const llm = state.llms.find(l => l.id === llmId);
+                    if (!llm) {
+                        alert('Please select an LLM.');
+                        return;
+                    }
+                    
+                    const streamChatId = state.activeChatId;
+                    state.streamingChats[streamChatId] = true;
+                    state.abortControllers[streamChatId] = new AbortController();
+                    updateSendBtnState();
+                    renderChats();
+                    
+                    // Force reset auto-scroll
+                    state.autoScrollEnabled = true;
+                    
+                    try {
+                        const systemMsg = (llm.systemPrompt || '').trim()
+                            ? [{ role: 'system', content: llm.systemPrompt.trim() }]
+                            : [];
+                        
+                        // Build history up to and including the edited user message
+                        const historyPayload = chat.messages.slice(0, aiMsgIndex).map(m => {
+                            if (m.images && m.images.length > 0) {
+                                const content = [];
+                                if (m.content && m.content !== '(Image attached)') {
+                                    content.push({ type: 'text', text: m.content });
+                                }
+                                m.images.forEach(img => {
+                                    if (img.base64) {
+                                        content.push({
+                                            type: 'image_url',
+                                            image_url: { url: img.base64 }
+                                        });
+                                    }
+                                });
+                                return { role: m.role, content };
+                            }
+                            return { role: m.role, content: m.content };
+                        });
+                        
+                        const messages = [...systemMsg, ...historyPayload];
+                        
+                        await fetchStream(llm, messages, (chunk) => {
+                            aiMsg.content += chunk;
+                            aiMsg.versions[aiMsg.currentVersion].content = aiMsg.content;
+                            if (state.activeChatId === streamChatId) {
+                                updateLastMessageAt(aiMsgIndex, aiMsg.content);
+                            }
+                        }, state.abortControllers[streamChatId].signal);
+                        
+                        aiMsg.pending = false;
+                        saveState();
+                        if (state.activeChatId === streamChatId) {
+                            renderMessages(chat.messages);
+                        }
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            aiMsg.content += '\n\n*[Error: ' + err.message + ']*';
+                            aiMsg.versions[aiMsg.currentVersion].content = aiMsg.content;
+                            if (state.activeChatId === streamChatId) {
+                                updateLastMessageAt(aiMsgIndex, aiMsg.content);
+                            }
+                        }
+                    } finally {
+                        delete state.streamingChats[streamChatId];
+                        delete state.abortControllers[streamChatId];
+                        updateSendBtnState();
+                        renderChats();
+                        saveState();
+                    }
+                } else {
+                    // No AI response yet - just save the edited message and generate new response
+                    renderMessages(chat.messages);
+                    saveState();
+                    
+                    // Add AI placeholder and generate response
+                    const newAiMsg = { role: 'assistant', content: '', pending: true, versions: [{ content: '' }], currentVersion: 0 };
+                    chat.messages.push(newAiMsg);
+                    renderMessages(chat.messages);
+                    
+                    const llmId = els.llmSelect.value;
+                    const llm = state.llms.find(l => l.id === llmId);
+                    if (!llm) {
+                        alert('Please select an LLM.');
+                        return;
+                    }
+                    
+                    const streamChatId = state.activeChatId;
+                    state.streamingChats[streamChatId] = true;
+                    state.abortControllers[streamChatId] = new AbortController();
+                    updateSendBtnState();
+                    renderChats();
+                    state.autoScrollEnabled = true;
+                    
+                    try {
+                        const systemMsg = (llm.systemPrompt || '').trim()
+                            ? [{ role: 'system', content: llm.systemPrompt.trim() }]
+                            : [];
+                        
+                        const historyPayload = chat.messages.slice(0, -1).map(m => {
+                            if (m.images && m.images.length > 0) {
+                                const content = [];
+                                if (m.content && m.content !== '(Image attached)') {
+                                    content.push({ type: 'text', text: m.content });
+                                }
+                                m.images.forEach(img => {
+                                    if (img.base64) {
+                                        content.push({
+                                            type: 'image_url',
+                                            image_url: { url: img.base64 }
+                                        });
+                                    }
+                                });
+                                return { role: m.role, content };
+                            }
+                            return { role: m.role, content: m.content };
+                        });
+                        
+                        const messages = [...systemMsg, ...historyPayload];
+                        
+                        await fetchStream(llm, messages, (chunk) => {
+                            newAiMsg.content += chunk;
+                            newAiMsg.versions[0].content = newAiMsg.content;
+                            updateLastMessage(newAiMsg.content);
+                        }, state.abortControllers[streamChatId].signal);
+                        
+                        newAiMsg.pending = false;
+                        saveState();
+                        renderMessages(chat.messages);
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            newAiMsg.content += '\n\n*[Error: ' + err.message + ']*';
+                            updateLastMessage(newAiMsg.content);
+                        }
+                    } finally {
+                        delete state.streamingChats[streamChatId];
+                        delete state.abortControllers[streamChatId];
+                        updateSendBtnState();
+                        renderChats();
+                        saveState();
+                    }
+                }
+            }
+
+            function switchVersion(messageIndex, direction) {
+                const chat = state.chats.find(c => c.id === state.activeChatId);
+                if (!chat || messageIndex < 0) return;
+                
+                const msg = chat.messages[messageIndex];
+                if (!msg || !msg.versions || msg.versions.length <= 1) return;
+                
+                const currentVersion = msg.currentVersion || 0;
+                const newVersion = currentVersion + direction;
+                
+                if (newVersion < 0 || newVersion >= msg.versions.length) return;
+                
+                // Update user message to new version
+                msg.currentVersion = newVersion;
+                msg.content = msg.versions[newVersion].content;
+                if (msg.versions[newVersion].images) {
+                    msg.images = msg.versions[newVersion].images;
+                }
+                
+                // If this is a user message, also switch the corresponding AI response
+                if (msg.role === 'user') {
+                    const aiMsgIndex = messageIndex + 1;
+                    const aiMsg = chat.messages[aiMsgIndex];
+                    if (aiMsg && aiMsg.role === 'assistant' && aiMsg.versions && aiMsg.versions[newVersion]) {
+                        aiMsg.currentVersion = newVersion;
+                        aiMsg.content = aiMsg.versions[newVersion].content;
+                    }
+                }
+                
+                // If this is an AI message, also switch the corresponding user message
+                if (msg.role === 'assistant') {
+                    const userMsgIndex = messageIndex - 1;
+                    const userMsg = chat.messages[userMsgIndex];
+                    if (userMsg && userMsg.role === 'user' && userMsg.versions && userMsg.versions[newVersion]) {
+                        userMsg.currentVersion = newVersion;
+                        userMsg.content = userMsg.versions[newVersion].content;
+                        if (userMsg.versions[newVersion].images) {
+                            userMsg.images = userMsg.versions[newVersion].images;
+                        }
+                    }
+                }
+                
+                saveState();
+                renderMessages(chat.messages);
             }
 
             function updateLastMessageAt(index, content) {
