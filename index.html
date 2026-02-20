@@ -72,6 +72,15 @@
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
         }
 
+        [data-theme="light"] .drop-overlay {
+            background: rgba(248, 250, 252, 0.8);
+        }
+
+        [data-theme="light"] .file-preview-item {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
         /* Light mode code block text fixes */
         [data-theme="light"] pre,
         [data-theme="light"] pre code,
@@ -2075,24 +2084,41 @@
         }
 
         /* Image Upload & Preview */
-        .input-container.drag-over {
-            border-color: var(--accent-color);
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .input-container.drag-over::after {
-            content: 'Drop image here';
-            position: absolute;
+        .drop-overlay {
+            display: none;
+            position: fixed;
             inset: 0;
-            display: flex;
+            z-index: 9999;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
             align-items: center;
             justify-content: center;
-            background: rgba(99, 102, 241, 0.2);
-            border-radius: 16px;
-            font-weight: 600;
-            color: var(--accent-color);
             pointer-events: none;
-            z-index: 10;
+        }
+
+        .drop-overlay.visible {
+            display: flex;
+        }
+
+        .drop-overlay-inner {
+            border: 3px dashed var(--accent-color);
+            border-radius: 20px;
+            padding: 48px 64px;
+            text-align: center;
+            color: var(--accent-color);
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .drop-overlay-inner svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            stroke: var(--accent-color);
+            fill: none;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .image-preview-container {
@@ -2142,6 +2168,59 @@
         }
 
         .image-preview-item:hover .remove-image {
+            opacity: 1;
+        }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+            color: var(--text-main);
+            max-width: 220px;
+            position: relative;
+        }
+
+        .file-preview-item .file-icon {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            stroke: var(--accent-color);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .file-preview-item .file-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .file-preview-item .remove-file {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .file-preview-item:hover .remove-file {
             opacity: 1;
         }
 
@@ -2576,6 +2655,14 @@
 
 <body>
 
+    <!-- Full-window drop overlay -->
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-overlay-inner">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div>Drop files here to attach</div>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header" id="sidebarHeader">
@@ -2700,11 +2787,11 @@
                         <textarea class="chat-textarea" id="chatInput" placeholder="Start typing..."
                             rows="1"></textarea>
                         <div class="input-actions">
-                            <button type="button" class="action-btn attach-btn" title="Attach Image">
+                            <button type="button" class="action-btn attach-btn" title="Attach File">
                                 <svg class="icon" viewBox="0 0 24 24">
                                     <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                                 </svg>
-                                <input type="file" id="imageInput" accept="image/*" multiple>
+                                <input type="file" id="imageInput" multiple>
                             </button>
                             <button type="button" class="action-btn" id="micBtn" title="Voice Input">
                                 <svg class="icon" viewBox="0 0 24 24">
@@ -3068,9 +3155,10 @@
                 artifactFrame: document.getElementById('artifactFrame'),
                 closeArtifactBtn: document.getElementById('closeArtifactBtn'),
                 downloadArtifactBtn: document.getElementById('downloadArtifactBtn'),
-                // Image Upload Elements
+                // File Upload Elements
                 imageInput: document.getElementById('imageInput'),
                 imagePreviewContainer: document.getElementById('imagePreviewContainer'),
+                dropOverlay: document.getElementById('dropOverlay'),
                 // Search Elements
                 searchInput: document.getElementById('searchInput'),
                 searchClear: document.getElementById('searchClear'),
@@ -3123,6 +3211,8 @@
                 autoScrollEnabled: true,
                 currentArtifact: { code: null, type: null },
                 pendingImages: [],  // { base64, type, name }
+                pendingFiles: [],   // { name, type, textContent, dataUrl }
+                dragCounter: 0,
                 userAvatar: { type: 'text', value: 'U' },  // type: 'text' | 'icon' | 'image', value: string
                 contextMenuChatId: null,  // Tracks which chat was right-clicked
                 messageQueue: []  // { chatId, text, images, llmId, timestamp } - messages queued when offline
@@ -3281,11 +3371,12 @@
 
                 els.llmSelect.addEventListener('change', saveActiveLlm);
 
-                // Image upload listeners
+                // File upload listeners (full-window drag zone)
                 els.imageInput.addEventListener('change', handleImageSelect);
-                els.chatForm.addEventListener('dragover', handleDragOver);
-                els.chatForm.addEventListener('dragleave', handleDragLeave);
-                els.chatForm.addEventListener('drop', handleDrop);
+                document.addEventListener('dragenter', handleDragEnter);
+                document.addEventListener('dragleave', handleDragLeave);
+                document.addEventListener('dragover', handleDragOver);
+                document.addEventListener('drop', handleDrop);
                 els.chatInput.addEventListener('paste', handlePaste);
 
                 // Search listeners
@@ -3848,13 +3939,17 @@
                     // Add all queued user messages to the chat in order
                     const itemsToProcess = [...items]; // Copy for re-queuing if needed
                     for (const item of items) {
-                        const userMessage = { role: 'user', content: item.text || '(Image attached)' };
+                        const hasQueuedAttachments = (item.images && item.images.length > 0) || (item.files && item.files.length > 0);
+                        const userMessage = { role: 'user', content: item.text || (hasQueuedAttachments ? '(File attached)' : '') };
                         if (item.images && item.images.length > 0) {
                             userMessage.images = item.images.map(img => ({
                                 base64: img.base64,
                                 name: img.name,
                                 type: img.type
                             }));
+                        }
+                        if (item.files && item.files.length > 0) {
+                            userMessage.files = item.files.map(f => ({ ...f }));
                         }
                         chat.messages.push(userMessage);
                     }
@@ -3892,30 +3987,7 @@
                             ? [{ role: 'system', content: llm.systemPrompt.trim() }]
                             : [];
 
-                        // Filter out pending for API - format images for vision models
-                        const historyPayload = chat.messages.slice(0, -1).map(m => {
-                            if (m.images && m.images.length > 0) {
-                                // Format for vision models (OpenAI/Claude format)
-                                const content = [];
-                                m.images.forEach(imgEntry => {
-                                    const imageUrl = typeof imgEntry === 'string'
-                                        ? imgEntry
-                                        : imgEntry?.base64 || imgEntry?.url;
-                                    if (!imageUrl) return;
-                                    content.push({
-                                        type: 'image_url',
-                                        image_url: { url: imageUrl }
-                                    });
-                                });
-                                if (m.content && m.content !== '(Image attached)') {
-                                    content.push({ type: 'text', text: m.content });
-                                } else if (content.length > 0) {
-                                    content.push({ type: 'text', text: 'What do you see in this image?' });
-                                }
-                                return { role: m.role, content };
-                            }
-                            return { role: m.role, content: m.content };
-                        });
+                        const historyPayload = chat.messages.slice(0, -1).map(formatMessageForApi);
                         const messages = [...systemMsg, ...historyPayload];
 
                         // Force reset auto-scroll on new message generation
@@ -4483,16 +4555,19 @@
                                 // Remove the user message so they can edit and resend
                                 chat.messages.pop();
                                 // Restore to input
-                                els.chatInput.value = lastUserMsg.content === '(Image attached)' ? '' : lastUserMsg.content;
-                                // Restore images if any
+                                const restoredContent = lastUserMsg.content;
+                                els.chatInput.value = (restoredContent === '(Image attached)' || restoredContent === '(File attached)') ? '' : restoredContent;
                                 if (lastUserMsg.images && lastUserMsg.images.length > 0) {
                                     state.pendingImages = lastUserMsg.images.map(img => ({
                                         base64: img.base64,
                                         name: img.name,
                                         type: img.type
                                     }));
-                                    renderImagePreviews();
                                 }
+                                if (lastUserMsg.files && lastUserMsg.files.length > 0) {
+                                    state.pendingFiles = lastUserMsg.files.map(f => ({ ...f }));
+                                }
+                                renderAttachmentPreviews();
                                 autoResizeInput();
                                 updateSendButtonState();
                             }
@@ -4509,7 +4584,8 @@
 
                 const text = els.chatInput.value.trim();
                 const hasImages = state.pendingImages.length > 0;
-                if (!text && !hasImages) return;
+                const hasFiles = state.pendingFiles.length > 0;
+                if (!text && !hasImages && !hasFiles) return;
 
                 const llmId = els.llmSelect.value;
                 const llm = state.llms.find(l => l.id === llmId);
@@ -4523,18 +4599,28 @@
                 if (!isOnline()) {
                     const streamChatId = state.activeChatId;
                     const images = [...state.pendingImages];
+                    const attachedFiles = [...state.pendingFiles];
                     
                     // Add to queue
                     addToQueue(streamChatId, text, images.length > 0 ? images : null, llmId);
                     
                     // Add user message to chat (so user sees it)
                     const chat = state.chats.find(c => c.id === streamChatId);
-                    const userMessage = { role: 'user', content: text || '(Image attached)' };
+                    const hasAttachments = images.length > 0 || attachedFiles.length > 0;
+                    const userMessage = { role: 'user', content: text || (hasAttachments ? '(File attached)' : '') };
                     if (images.length > 0) {
                         userMessage.images = images.map(img => ({
                             base64: img.base64,
                             name: img.name,
                             type: img.type
+                        }));
+                    }
+                    if (attachedFiles.length > 0) {
+                        userMessage.files = attachedFiles.map(f => ({
+                            name: f.name,
+                            type: f.type,
+                            textContent: f.textContent,
+                            dataUrl: f.dataUrl
                         }));
                     }
                     chat.messages.push(userMessage);
@@ -4584,8 +4670,9 @@
                     return;
                 }
 
-                // Capture images before clearing
+                // Capture attachments before clearing
                 const images = [...state.pendingImages];
+                const attachedFiles = [...state.pendingFiles];
 
                 // Capture the chat ID for this stream (important for parallel streams)
                 const streamChatId = state.activeChatId;
@@ -4594,17 +4681,26 @@
                 els.chatInput.value = '';
                 els.chatInput.style.height = 'auto';
                 clearPendingImages();
-                clearDraft(streamChatId); // Clear saved draft after sending
+                clearDraft(streamChatId);
                 updateSendButtonState();
 
-                // Add User Message (with images if any)
+                // Add User Message (with images and/or files)
                 const chat = state.chats.find(c => c.id === streamChatId);
-                const userMessage = { role: 'user', content: text || '(Image attached)' };
+                const hasAttachments = images.length > 0 || attachedFiles.length > 0;
+                const userMessage = { role: 'user', content: text || (hasAttachments ? '(File attached)' : '') };
                 if (images.length > 0) {
                     userMessage.images = images.map(img => ({
                         base64: img.base64,
                         name: img.name,
                         type: img.type
+                    }));
+                }
+                if (attachedFiles.length > 0) {
+                    userMessage.files = attachedFiles.map(f => ({
+                        name: f.name,
+                        type: f.type,
+                        textContent: f.textContent,
+                        dataUrl: f.dataUrl
                     }));
                 }
                 chat.messages.push(userMessage);
@@ -4641,30 +4737,7 @@
                         ? [{ role: 'system', content: llm.systemPrompt.trim() }]
                         : [];
 
-                    // Filter out pending for API - format images for vision models
-                    const historyPayload = chat.messages.slice(0, -1).map(m => {
-                        if (m.images && m.images.length > 0) {
-                            // Format for vision models (OpenAI/Claude format)
-                            const content = [];
-                            m.images.forEach(imgEntry => {
-                                const imageUrl = typeof imgEntry === 'string'
-                                    ? imgEntry
-                                    : imgEntry?.base64 || imgEntry?.url;
-                                if (!imageUrl) return;
-                                content.push({
-                                    type: 'image_url',
-                                    image_url: { url: imageUrl }
-                                });
-                            });
-                            if (m.content && m.content !== '(Image attached)') {
-                                content.push({ type: 'text', text: m.content });
-                            } else if (content.length > 0) {
-                                content.push({ type: 'text', text: 'What do you see in this image?' });
-                            }
-                            return { role: m.role, content };
-                        }
-                        return { role: m.role, content: m.content };
-                    });
+                    const historyPayload = chat.messages.slice(0, -1).map(formatMessageForApi);
                     const messages = [...systemMsg, ...historyPayload];
 
                     // Force reset auto-scroll on new message generation
@@ -4672,7 +4745,6 @@
 
                     await fetchStream(llm, messages, (chunk) => {
                         aiMsg.content += chunk;
-                        // Only update UI if we're still viewing this chat
                         if (state.activeChatId === streamChatId) {
                             updateLastMessage(aiMsg.content);
                         }
@@ -4699,7 +4771,8 @@
                             
                             // Get the user message that was just added (it's the second-to-last now)
                             const lastUserMsg = chat.messages[chat.messages.length - 1];
-                            const messageText = lastUserMsg.content === '(Image attached)' ? '' : lastUserMsg.content;
+                            const c = lastUserMsg.content;
+                            const messageText = (c === '(Image attached)' || c === '(File attached)') ? '' : c;
                             const messageImages = lastUserMsg.images || null;
                             
                             // Add message to queue
@@ -5018,20 +5091,20 @@ ${conversationText}`;
                             </div>`;
                     } else {
                         if (msg.role === 'user') {
-                            const attachments = Array.isArray(msg.images) ? msg.images : [];
-                            if (attachments.length > 0) {
+                            const imgAttachments = Array.isArray(msg.images) ? msg.images : [];
+                            const fileAttachments = Array.isArray(msg.files) ? msg.files : [];
+                            const hasAnyAttachment = imgAttachments.length > 0 || fileAttachments.length > 0;
+                            if (hasAnyAttachment) {
                                 const attachmentsDiv = document.createElement('div');
                                 attachmentsDiv.className = 'message-attachments';
-                                attachments.forEach((imgEntry, idx) => {
+                                imgAttachments.forEach((imgEntry, idx) => {
                                     const attachment = typeof imgEntry === 'string'
                                         ? { url: imgEntry, name: `Image ${idx + 1}` }
                                         : {
                                             url: imgEntry?.base64 || imgEntry?.url,
                                             name: imgEntry?.name || `Image ${idx + 1}`
                                         };
-
                                     if (!attachment.url) return;
-
                                     const link = document.createElement('a');
                                     link.className = 'message-attachment';
                                     link.href = attachment.url;
@@ -5041,16 +5114,32 @@ ${conversationText}`;
                                     link.textContent = `📎 ${attachment.name}`;
                                     attachmentsDiv.appendChild(link);
                                 });
-
+                                fileAttachments.forEach(f => {
+                                    const link = document.createElement('a');
+                                    link.className = 'message-attachment';
+                                    if (f.textContent) {
+                                        const blob = new Blob([f.textContent], { type: f.type || 'text/plain' });
+                                        link.href = URL.createObjectURL(blob);
+                                    } else if (f.dataUrl) {
+                                        link.href = f.dataUrl;
+                                    } else {
+                                        return;
+                                    }
+                                    link.target = '_blank';
+                                    link.rel = 'noopener noreferrer';
+                                    link.download = f.name;
+                                    link.textContent = `📎 ${f.name}`;
+                                    attachmentsDiv.appendChild(link);
+                                });
                                 if (attachmentsDiv.children.length > 0) {
                                     contentDiv.appendChild(attachmentsDiv);
                                 }
                             }
-                            if (msg.content && msg.content !== '(Image attached)') {
+                            if (msg.content && msg.content !== '(Image attached)' && msg.content !== '(File attached)') {
                                 const textSpan = document.createElement('span');
                                 textSpan.innerText = msg.content;
                                 contentDiv.appendChild(textSpan);
-                            } else if (!msg.images || msg.images.length === 0) {
+                            } else if (!hasAnyAttachment) {
                                 contentDiv.innerText = msg.content;
                             }
                         } else {
@@ -5762,8 +5851,7 @@ ${conversationText}`;
                 renderMessages(chat.messages);
                 saveState();
 
-                // Get messages up to but not including this AI response
-                const historyPayload = chat.messages.slice(0, messageIndex).map(m => ({ role: m.role, content: m.content }));
+                const historyPayload = chat.messages.slice(0, messageIndex).map(formatMessageForApi);
                 
                 const systemMsg = (llm.systemPrompt || '').trim()
                     ? [{ role: 'system', content: llm.systemPrompt.trim() }]
@@ -5924,7 +6012,7 @@ ${conversationText}`;
 
                 const textarea = document.createElement('textarea');
                 textarea.className = 'user-edit-textarea';
-                textarea.value = originalContent === '(Image attached)' ? '' : originalContent;
+                textarea.value = (originalContent === '(Image attached)' || originalContent === '(File attached)') ? '' : originalContent;
                 textarea.placeholder = 'Edit your message...';
 
                 const editActions = document.createElement('div');
@@ -5957,15 +6045,17 @@ ${conversationText}`;
                 `;
                 saveAndSubmitBtn.onclick = async () => {
                     const newContent = textarea.value.trim();
-                    if (!newContent && (!msg.images || msg.images.length === 0)) {
+                    const hasImgs = msg.images && msg.images.length > 0;
+                    const hasFs = msg.files && msg.files.length > 0;
+                    if (!newContent && !hasImgs && !hasFs) {
                         alert('Please enter a message.');
                         return;
                     }
                     
-                    // Store this as an edit state and trigger new submission
                     state.editingMessageIndex = messageIndex;
-                    state.editingMessageContent = newContent || '(Image attached)';
+                    state.editingMessageContent = newContent || (hasImgs ? '(Image attached)' : hasFs ? '(File attached)' : '');
                     state.editingMessageImages = msg.images ? [...msg.images] : [];
+                    state.editingMessageFiles = msg.files ? [...msg.files] : [];
                     
                     // Submit the edited message
                     await submitEditedMessage();
@@ -5985,21 +6075,21 @@ ${conversationText}`;
                 const messageIndex = state.editingMessageIndex;
                 const newContent = state.editingMessageContent;
                 const images = state.editingMessageImages;
+                const files = state.editingMessageFiles || [];
                 
                 if (!chat || messageIndex === undefined) return;
                 
                 const userMsg = chat.messages[messageIndex];
                 if (!userMsg || userMsg.role !== 'user') return;
                 
-                // Find the corresponding AI response (next message)
                 const aiMsgIndex = messageIndex + 1;
                 const aiMsg = chat.messages[aiMsgIndex];
                 
-                // Initialize versions array if not exists
                 if (!userMsg.versions) {
                     userMsg.versions = [{
                         content: userMsg.content,
-                        images: userMsg.images ? [...userMsg.images] : []
+                        images: userMsg.images ? [...userMsg.images] : [],
+                        files: userMsg.files ? [...userMsg.files] : []
                     }];
                 }
                 if (aiMsg && aiMsg.role === 'assistant' && !aiMsg.versions) {
@@ -6008,19 +6098,20 @@ ${conversationText}`;
                     }];
                 }
                 
-                // Add new version for user message
                 userMsg.versions.push({
                     content: newContent,
-                    images: images ? [...images] : []
+                    images: images ? [...images] : [],
+                    files: files.length > 0 ? [...files] : []
                 });
                 userMsg.currentVersion = userMsg.versions.length - 1;
                 userMsg.content = newContent;
                 userMsg.images = images ? [...images] : userMsg.images;
+                userMsg.files = files.length > 0 ? [...files] : userMsg.files;
                 
-                // Clear edit state
                 delete state.editingMessageIndex;
                 delete state.editingMessageContent;
                 delete state.editingMessageImages;
+                delete state.editingMessageFiles;
                 
                 // Check if we have an AI response to regenerate
                 if (aiMsg && aiMsg.role === 'assistant') {
@@ -6057,26 +6148,7 @@ ${conversationText}`;
                             ? [{ role: 'system', content: llm.systemPrompt.trim() }]
                             : [];
                         
-                        // Build history up to and including the edited user message
-                        const historyPayload = chat.messages.slice(0, aiMsgIndex).map(m => {
-                            if (m.images && m.images.length > 0) {
-                                const content = [];
-                                if (m.content && m.content !== '(Image attached)') {
-                                    content.push({ type: 'text', text: m.content });
-                                }
-                                m.images.forEach(img => {
-                                    if (img.base64) {
-                                        content.push({
-                                            type: 'image_url',
-                                            image_url: { url: img.base64 }
-                                        });
-                                    }
-                                });
-                                return { role: m.role, content };
-                            }
-                            return { role: m.role, content: m.content };
-                        });
-                        
+                        const historyPayload = chat.messages.slice(0, aiMsgIndex).map(formatMessageForApi);
                         const messages = [...systemMsg, ...historyPayload];
                         
                         await fetchStream(llm, messages, (chunk) => {
@@ -6136,25 +6208,7 @@ ${conversationText}`;
                             ? [{ role: 'system', content: llm.systemPrompt.trim() }]
                             : [];
                         
-                        const historyPayload = chat.messages.slice(0, -1).map(m => {
-                            if (m.images && m.images.length > 0) {
-                                const content = [];
-                                if (m.content && m.content !== '(Image attached)') {
-                                    content.push({ type: 'text', text: m.content });
-                                }
-                                m.images.forEach(img => {
-                                    if (img.base64) {
-                                        content.push({
-                                            type: 'image_url',
-                                            image_url: { url: img.base64 }
-                                        });
-                                    }
-                                });
-                                return { role: m.role, content };
-                            }
-                            return { role: m.role, content: m.content };
-                        });
-                        
+                        const historyPayload = chat.messages.slice(0, -1).map(formatMessageForApi);
                         const messages = [...systemMsg, ...historyPayload];
                         
                         await fetchStream(llm, messages, (chunk) => {
@@ -6198,6 +6252,9 @@ ${conversationText}`;
                 msg.content = msg.versions[newVersion].content;
                 if (msg.versions[newVersion].images) {
                     msg.images = msg.versions[newVersion].images;
+                }
+                if (msg.versions[newVersion].files) {
+                    msg.files = msg.versions[newVersion].files;
                 }
                 
                 // If this is a user message, also switch the corresponding AI response
@@ -6739,27 +6796,36 @@ ${conversationText}`;
                 window.speechSynthesis.speak(utterance);
             }
 
-            // --- Image Upload ---
+            // --- File Upload ---
+            function handleDragEnter(e) {
+                e.preventDefault();
+                state.dragCounter++;
+                if (state.dragCounter === 1) {
+                    els.dropOverlay.classList.add('visible');
+                }
+            }
+
             function handleDragOver(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                els.chatForm.classList.add('drag-over');
             }
 
             function handleDragLeave(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                els.chatForm.classList.remove('drag-over');
+                state.dragCounter--;
+                if (state.dragCounter <= 0) {
+                    state.dragCounter = 0;
+                    els.dropOverlay.classList.remove('visible');
+                }
             }
 
             function handleDrop(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                els.chatForm.classList.remove('drag-over');
-                
+                state.dragCounter = 0;
+                els.dropOverlay.classList.remove('visible');
+
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
-                    processImageFiles(files);
+                    processFiles(files);
                 }
             }
 
@@ -6768,17 +6834,20 @@ ${conversationText}`;
                 if (!items) return;
 
                 for (const item of items) {
-                    if (item.type.startsWith('image/')) {
-                        e.preventDefault(); // Prevent default paste behavior for images
+                    if (item.kind === 'file') {
+                        e.preventDefault();
                         const file = item.getAsFile();
                         if (file) {
-                            // Generate a name based on timestamp
-                            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-                            const ext = file.type.split('/')[1] || 'png';
-                            const namedFile = new File([file], `clipboard-${timestamp}.${ext}`, { type: file.type });
-                            processImageFiles([namedFile]);
+                            if (file.type.startsWith('image/') && !file.name) {
+                                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                                const ext = file.type.split('/')[1] || 'png';
+                                const namedFile = new File([file], `clipboard-${timestamp}.${ext}`, { type: file.type });
+                                processFiles([namedFile]);
+                            } else {
+                                processFiles([file]);
+                            }
                         }
-                        break; // Only process the first image
+                        break;
                     }
                 }
             }
@@ -6786,31 +6855,73 @@ ${conversationText}`;
             function handleImageSelect(e) {
                 const files = e.target.files;
                 if (files.length > 0) {
-                    processImageFiles(files);
+                    processFiles(files);
                 }
-                e.target.value = ''; // Reset input
+                e.target.value = '';
             }
 
-            function processImageFiles(files) {
+            const TEXT_EXTENSIONS = new Set([
+                'txt','md','js','mjs','cjs','ts','tsx','jsx','py','json','csv','html','htm',
+                'css','scss','less','xml','yaml','yml','sh','bat','ps1','log','sql','java',
+                'c','cpp','h','hpp','cs','rb','go','rs','toml','ini','cfg','env','vue','svelte',
+                'swift','kt','kts','r','lua','pl','pm','php','dart','zig','asm','s','makefile',
+                'dockerfile','gitignore','editorconfig','properties','gradle','tf','hcl'
+            ]);
+
+            function isTextFile(file) {
+                if (file.type.startsWith('text/')) return true;
+                if (file.type === 'application/json' || file.type === 'application/xml'
+                    || file.type === 'application/javascript' || file.type === 'application/typescript'
+                    || file.type === 'application/x-yaml' || file.type === 'application/x-sh') return true;
+                const ext = (file.name || '').split('.').pop().toLowerCase();
+                return TEXT_EXTENSIONS.has(ext);
+            }
+
+            function processFiles(files) {
                 Array.from(files).forEach(file => {
-                    if (!file.type.startsWith('image/')) return;
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const base64 = e.target.result;
-                        state.pendingImages.push({
-                            base64: base64,
-                            type: file.type,
-                            name: file.name
-                        });
-                        renderImagePreviews();
-                        updateSendButtonState();
-                    };
-                    reader.readAsDataURL(file);
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            state.pendingImages.push({
+                                base64: e.target.result,
+                                type: file.type,
+                                name: file.name
+                            });
+                            renderAttachmentPreviews();
+                            updateSendButtonState();
+                        };
+                        reader.readAsDataURL(file);
+                    } else if (isTextFile(file)) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            state.pendingFiles.push({
+                                name: file.name,
+                                type: file.type || 'text/plain',
+                                textContent: e.target.result,
+                                dataUrl: null
+                            });
+                            renderAttachmentPreviews();
+                            updateSendButtonState();
+                        };
+                        reader.readAsText(file);
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            state.pendingFiles.push({
+                                name: file.name,
+                                type: file.type || 'application/octet-stream',
+                                textContent: null,
+                                dataUrl: e.target.result
+                            });
+                            renderAttachmentPreviews();
+                            updateSendButtonState();
+                        };
+                        reader.readAsDataURL(file);
+                    }
                 });
             }
 
-            function renderImagePreviews() {
+            function renderAttachmentPreviews() {
                 els.imagePreviewContainer.innerHTML = '';
                 state.pendingImages.forEach((img, index) => {
                     const item = document.createElement('div');
@@ -6821,11 +6932,61 @@ ${conversationText}`;
                     `;
                     item.querySelector('.remove-image').onclick = () => {
                         state.pendingImages.splice(index, 1);
-                        renderImagePreviews();
+                        renderAttachmentPreviews();
                         updateSendButtonState();
                     };
                     els.imagePreviewContainer.appendChild(item);
                 });
+                state.pendingFiles.forEach((file, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'file-preview-item';
+                    item.innerHTML = `
+                        <svg class="file-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span class="file-name" title="${file.name}">${file.name}</span>
+                        <button class="remove-file" title="Remove">&times;</button>
+                    `;
+                    item.querySelector('.remove-file').onclick = () => {
+                        state.pendingFiles.splice(index, 1);
+                        renderAttachmentPreviews();
+                        updateSendButtonState();
+                    };
+                    els.imagePreviewContainer.appendChild(item);
+                });
+            }
+
+            function formatMessageForApi(m) {
+                const hasImages = m.images && m.images.length > 0;
+                const hasFiles = m.files && m.files.length > 0;
+                if (!hasImages && !hasFiles) {
+                    return { role: m.role, content: m.content };
+                }
+                const content = [];
+                if (hasFiles) {
+                    m.files.forEach(f => {
+                        if (f.textContent) {
+                            content.push({ type: 'text', text: `[File: ${f.name}]\n\`\`\`\n${f.textContent}\n\`\`\`` });
+                        } else {
+                            content.push({ type: 'text', text: `[Attached file: ${f.name} (${f.type})]` });
+                        }
+                    });
+                }
+                if (hasImages) {
+                    m.images.forEach(imgEntry => {
+                        const imageUrl = typeof imgEntry === 'string'
+                            ? imgEntry
+                            : imgEntry?.base64 || imgEntry?.url;
+                        if (!imageUrl) return;
+                        content.push({ type: 'image_url', image_url: { url: imageUrl } });
+                    });
+                }
+                const textContent = m.content && m.content !== '(Image attached)' && m.content !== '(File attached)'
+                    ? m.content : null;
+                if (textContent) {
+                    content.push({ type: 'text', text: textContent });
+                } else if (hasImages && !hasFiles) {
+                    content.push({ type: 'text', text: 'What do you see in this image?' });
+                }
+                return { role: m.role, content };
             }
 
             function updateSendButtonState() {
@@ -6836,12 +6997,14 @@ ${conversationText}`;
                 }
                 const hasText = els.chatInput.value.trim() !== '';
                 const hasImages = state.pendingImages.length > 0;
-                els.sendBtn.disabled = !hasText && !hasImages;
+                const hasFiles = state.pendingFiles.length > 0;
+                els.sendBtn.disabled = !hasText && !hasImages && !hasFiles;
             }
 
             function clearPendingImages() {
                 state.pendingImages = [];
-                renderImagePreviews();
+                state.pendingFiles = [];
+                renderAttachmentPreviews();
             }
 
             // --- Search ---
