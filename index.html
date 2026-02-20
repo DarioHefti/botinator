@@ -81,6 +81,10 @@
             border-color: rgba(0, 0, 0, 0.1);
         }
 
+        [data-theme="light"] .message-img-thumb {
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
         /* Light mode code block text fixes */
         [data-theme="light"] pre,
         [data-theme="light"] pre code,
@@ -2226,9 +2230,24 @@
 
         .message-attachments {
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 6px;
             margin-bottom: 8px;
+        }
+
+        .message-img-thumb {
+            display: block;
+            max-width: 220px;
+            max-height: 180px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            object-fit: cover;
+            transition: opacity 0.15s;
+        }
+
+        .message-img-thumb:hover {
+            opacity: 0.85;
         }
 
         .message-attachment {
@@ -5098,21 +5117,17 @@ ${conversationText}`;
                                 const attachmentsDiv = document.createElement('div');
                                 attachmentsDiv.className = 'message-attachments';
                                 imgAttachments.forEach((imgEntry, idx) => {
-                                    const attachment = typeof imgEntry === 'string'
-                                        ? { url: imgEntry, name: `Image ${idx + 1}` }
-                                        : {
-                                            url: imgEntry?.base64 || imgEntry?.url,
-                                            name: imgEntry?.name || `Image ${idx + 1}`
-                                        };
-                                    if (!attachment.url) return;
-                                    const link = document.createElement('a');
-                                    link.className = 'message-attachment';
-                                    link.href = attachment.url;
-                                    link.target = '_blank';
-                                    link.rel = 'noopener noreferrer';
-                                    link.download = attachment.name;
-                                    link.textContent = `📎 ${attachment.name}`;
-                                    attachmentsDiv.appendChild(link);
+                                    const imgUrl = typeof imgEntry === 'string'
+                                        ? imgEntry
+                                        : imgEntry?.base64 || imgEntry?.url;
+                                    if (!imgUrl) return;
+                                    const img = document.createElement('img');
+                                    img.className = 'message-img-thumb';
+                                    img.src = imgUrl;
+                                    img.alt = (typeof imgEntry === 'object' && imgEntry?.name) || `Image ${idx + 1}`;
+                                    img.title = img.alt;
+                                    img.onclick = () => window.open(imgUrl, '_blank');
+                                    attachmentsDiv.appendChild(img);
                                 });
                                 fileAttachments.forEach(f => {
                                     const link = document.createElement('a');
